@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>Gantt Chart Builder</title>
 <script src="./support.js"></script>
+<script src="/_blob/692d11023affe5a70da4aeeb6efa4172"></script>
 </head>
 <body>
 <x-dc>
@@ -38,6 +39,7 @@ button:focus-visible,a:focus-visible,select:focus-visible,textarea:focus-visible
 <button type="button" onClick="{{newProject}}" style="height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #C7CFD8; background: #FFFFFF; color: #16202A; font: inherit; font-weight: 500; cursor: pointer">New project</button>
 <button type="button" onClick="{{saveNow}}" style="height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #C7CFD8; background: #FFFFFF; color: #16202A; font: inherit; font-weight: 500; cursor: pointer">Save</button>
 <button type="button" onClick="{{openImport}}" style="height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #C7CFD8; background: #FFFFFF; color: #16202A; font: inherit; font-weight: 500; cursor: pointer">Import</button>
+<button type="button" onClick="{{openPdf}}" style="height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #C7CFD8; background: #FFFFFF; color: #16202A; font: inherit; font-weight: 500; cursor: pointer">Save PDF</button>
 <button type="button" onClick="{{openExport}}" style="height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid {{accent}}; background: {{accent}}; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Export</button>
 </div>
 </header>
@@ -179,6 +181,117 @@ Add task
 </section>
 </sc-if>
 
+<sc-if value="{{showPdf}}" hint-placeholder-val="{{false}}">
+<section aria-label="Save as PDF" style="background: #FFFFFF; border: 1px solid #D5DBE1; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Save as PDF</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" onClick="{{savePdf}}" style="height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid {{accent}}; background: {{accent}}; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Save PDF</button>
+<button type="button" onClick="{{closePanel}}" style="height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #C7CFD8; background: #FFFFFF; color: #16202A; font: inherit; font-weight: 500; cursor: pointer">Close</button>
+</div>
+</div>
+<sc-if value="{{hasPdfNote}}" hint-placeholder-val="{{false}}">
+<p role="status" style="margin: 0; font-weight: 500">{{pdfNote}}</p>
+</sc-if>
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+<div style="flex: 2 1 460px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="gb-pdf-paper" style="font-size: 13px; font-weight: 500">Paper size</label>
+<select id="gb-pdf-paper" value="{{pdf.paper}}" onChange="{{pdf.onPaper}}" style="height: 44px; box-sizing: border-box; padding: 0 8px; border: 1px solid #C7CFD8; border-radius: 8px; font: inherit; color: #16202A; background: #FFFFFF">
+<option value="a4">A4</option>
+<option value="a3">A3</option>
+<option value="letter">US Letter</option>
+<option value="legal">US Legal</option>
+<option value="tabloid">Tabloid (11 × 17 in)</option>
+</select>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="gb-pdf-orient" style="font-size: 13px; font-weight: 500">Orientation</label>
+<select id="gb-pdf-orient" value="{{pdf.orientation}}" onChange="{{pdf.onOrientation}}" style="height: 44px; box-sizing: border-box; padding: 0 8px; border: 1px solid #C7CFD8; border-radius: 8px; font: inherit; color: #16202A; background: #FFFFFF">
+<option value="landscape">Landscape</option>
+<option value="portrait">Portrait</option>
+</select>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="gb-pdf-margin" style="font-size: 13px; font-weight: 500">Margins</label>
+<select id="gb-pdf-margin" value="{{pdf.margin}}" onChange="{{pdf.onMargin}}" style="height: 44px; box-sizing: border-box; padding: 0 8px; border: 1px solid #C7CFD8; border-radius: 8px; font: inherit; color: #16202A; background: #FFFFFF">
+<option value="normal">Normal</option>
+<option value="narrow">Narrow</option>
+</select>
+</div>
+</div>
+<fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px">
+<legend style="font-size: 13px; font-weight: 500; padding: 0; margin-bottom: 8px">Page layout</legend>
+<div style="display: flex; flex-wrap: wrap; gap: 8px 24px">
+<div style="display: flex; align-items: center; gap: 10px; min-height: 44px">
+<input id="gb-pdf-fit" type="radio" name="gb-pdf-layout" checked="{{pdf.isFit}}" onChange="{{pdf.setFit}}" style="width: 20px; height: 20px; accent-color: {{accent}}">
+<label for="gb-pdf-fit">Fit to one page</label>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; min-height: 44px">
+<input id="gb-pdf-spread" type="radio" name="gb-pdf-layout" checked="{{pdf.isSpread}}" onChange="{{pdf.setSpread}}" style="width: 20px; height: 20px; accent-color: {{accent}}">
+<label for="gb-pdf-spread">Spread across pages</label>
+</div>
+</div>
+<sc-if value="{{pdf.isSpread}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="gb-pdf-across" style="font-size: 13px; font-weight: 500">Pages wide</label>
+<input id="gb-pdf-across" type="number" min="1" max="8" value="{{pdf.across}}" onChange="{{pdf.onAcross}}" style="height: 44px; width: 96px; box-sizing: border-box; padding: 0 12px; border: 1px solid #C7CFD8; border-radius: 8px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 14px; color: #16202A">
+</div>
+<span aria-hidden="true" style="height: 44px; display: flex; align-items: center; color: #4D5B69">×</span>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="gb-pdf-down" style="font-size: 13px; font-weight: 500">Pages tall</label>
+<input id="gb-pdf-down" type="number" min="1" max="8" value="{{pdf.down}}" onChange="{{pdf.onDown}}" style="height: 44px; width: 96px; box-sizing: border-box; padding: 0 12px; border: 1px solid #C7CFD8; border-radius: 8px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 14px; color: #16202A">
+</div>
+</div>
+<p style="margin: 0; font-size: 13px; color: #4D5B69">Pages wide stretches the timeline across more sheets for long projects. Pages tall splits the task list across more sheets.</p>
+</sc-if>
+</fieldset>
+<fieldset style="margin: 0; padding: 0; border: 0">
+<legend style="font-size: 13px; font-weight: 500; padding: 0; margin-bottom: 4px">Include</legend>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 16px">
+<div style="display: flex; align-items: center; gap: 10px; min-height: 44px">
+<input id="gb-pdf-dates" type="checkbox" checked="{{pdf.showDates}}" onChange="{{pdf.toggle_showDates}}" style="width: 20px; height: 20px; accent-color: {{accent}}">
+<label for="gb-pdf-dates">Start, end and days columns</label>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; min-height: 44px">
+<input id="gb-pdf-progress" type="checkbox" checked="{{pdf.showProgress}}" onChange="{{pdf.toggle_showProgress}}" style="width: 20px; height: 20px; accent-color: {{accent}}">
+<label for="gb-pdf-progress">% complete column</label>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; min-height: 44px">
+<input id="gb-pdf-repeat" type="checkbox" checked="{{pdf.repeatNames}}" onChange="{{pdf.toggle_repeatNames}}" style="width: 20px; height: 20px; accent-color: {{accent}}">
+<label for="gb-pdf-repeat">Task list on every page</label>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; min-height: 44px">
+<input id="gb-pdf-today" type="checkbox" checked="{{pdf.showToday}}" onChange="{{pdf.toggle_showToday}}" style="width: 20px; height: 20px; accent-color: {{accent}}">
+<label for="gb-pdf-today">Today line</label>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; min-height: 44px">
+<input id="gb-pdf-weekends" type="checkbox" checked="{{pdf.shadeWeekends}}" onChange="{{pdf.toggle_shadeWeekends}}" style="width: 20px; height: 20px; accent-color: {{accent}}">
+<label for="gb-pdf-weekends">Weekend shading</label>
+</div>
+</div>
+</fieldset>
+</div>
+<div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<span style="font-size: 13px; font-weight: 500">Preview of the page layout</span>
+<div aria-hidden="true" style="padding: 16px; background: #EEF1F4; border-radius: 8px; display: flex; justify-content: center; overflow-x: auto">
+<div style="display: grid; gap: 6px; grid-template-columns: repeat({{pdf.across}}, {{pdf.tileW}}px)">
+<sc-for list="{{pdf.tiles}}" as="tile" hint-placeholder-count="2">
+<div style="background: #FFFFFF; border: 1px solid #C7CFD8; border-radius: 2px; box-shadow: 0 1px 2px rgba(22,32,42,0.12); display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: #4D5B69; height: {{pdf.tileH}}px">{{tile.label}}</div>
+</sc-for>
+</div>
+</div>
+<p style="margin: 0; font-size: 13px">{{pdf.info}}</p>
+<sc-if value="{{pdf.hasWarning}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0; font-size: 13px; color: #A3261F; font-weight: 500">{{pdf.warning}}</p>
+</sc-if>
+</div>
+</div>
+</section>
+</sc-if>
+
 <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
 
 <section aria-label="Task details" style="flex: 2 1 520px; min-width: 0; background: #FFFFFF; border: 1px solid #D5DBE1; border-radius: 12px; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
@@ -284,7 +397,8 @@ class Component extends DCLogic {
       id: this.uid(), title: 'Website relaunch', tasks: this.schedule(this.sample(monday)),
       scale: 'week', selectedId: '', storageOk: false, booted: false, savedAt: 0, rev: 0,
       pendingDelete: '', panel: '', exportText: '', exportUrl: '', exportName: '', exportNote: '',
-      copied: false, importText: '', importError: ''
+      copied: false, importText: '', importError: '',
+      pdf: this.cleanPdf(null), pdfNote: ''
     };
   }
 
@@ -411,7 +525,7 @@ class Component extends DCLogic {
     var p = all[id]; if (!p) return;
     var tasks = (Array.isArray(p.tasks) ? p.tasks : []).slice(0, 500).map((t, i) => this.clean(t, i));
     var scale = ['day', 'week', 'month'].indexOf(p.scale) >= 0 ? p.scale : 'week';
-    this.setState({ id: id, title: String(p.title || 'Untitled project').slice(0, 200), tasks: this.schedule(tasks), scale: scale,
+    this.setState({ id: id, title: String(p.title || 'Untitled project').slice(0, 200), tasks: this.schedule(tasks), scale: scale, pdf: this.cleanPdf(p.pdf),
       selectedId: '', storageOk: true, booted: true, savedAt: p.savedAt || 0, pendingDelete: '', panel: '' });
     var ls = this.store(); if (ls) { try { ls.setItem('gantt-builder:last', id); } catch (e) {} }
   }
@@ -419,7 +533,7 @@ class Component extends DCLogic {
     var ls = this.store();
     if (!ls) { this.setState({ storageOk: false }); return; }
     var all = this.readAll(), now = Date.now();
-    all[this.state.id] = { title: this.state.title, tasks: this.state.tasks, scale: this.state.scale, savedAt: now };
+    all[this.state.id] = { title: this.state.title, tasks: this.state.tasks, scale: this.state.scale, pdf: this.state.pdf, savedAt: now };
     var ok = this.writeAll(all);
     if (ok) { try { ls.setItem('gantt-builder:last', this.state.id); } catch (e) {} }
     this.setState({ storageOk: ok, savedAt: ok ? now : this.state.savedAt, rev: this.state.rev + 1 });
@@ -556,12 +670,16 @@ class Component extends DCLogic {
     try { url = URL.createObjectURL(new Blob([text], { type: 'application/json' })); } catch (e) {}
     this.setState({ panel: 'export', exportText: text, exportUrl: url, exportName: this.slug(this.state.title) + '.gantt.json', exportNote: '', copied: false });
   }
-  saveFile() {
-    var name = this.state.exportName, text = this.state.exportText;
+  deliver(name, data, onNote) {
+    var url = '';
     var fallback = () => {
       var ok = false;
-      try { if (this.state.exportUrl) { var a = document.createElement('a'); a.href = this.state.exportUrl; a.download = name; a.click(); ok = true; } } catch (e) {}
-      this.setState({ exportNote: ok ? 'Download started. If no file appears, use Copy and save the text as a .json file.' : 'Downloads are blocked here. Use Copy and save the text as a .json file.' });
+      try {
+        if (!url) url = URL.createObjectURL(data instanceof Blob ? data : new Blob([data], { type: 'application/json' }));
+        var a = document.createElement('a'); a.href = url; a.download = name; a.click(); ok = true;
+        setTimeout(function () { try { URL.revokeObjectURL(url); } catch (e) {} }, 60000);
+      } catch (e) {}
+      onNote(ok ? 'Download started. If no file appears, your browser blocked it here.' : 'Downloads are blocked here.');
     };
     var host = null;
     try { host = window.claude && typeof window.claude.use === 'function' ? window.claude : null; } catch (e) {}
@@ -569,13 +687,298 @@ class Component extends DCLogic {
     var timeout = new Promise(function (r) { setTimeout(function () { r(null); }, 2500); });
     Promise.race([host.use('downloads'), timeout]).then((dl) => {
       if (!dl) { fallback(); return; }
-      return dl.save({ filename: name, data: text }).then(
-        () => this.setState({ exportNote: 'File saved.' }),
-        (err) => {
-          if (err && err.code === 'declined') this.setState({ exportNote: 'Download cancelled.' });
-          else fallback();
-        });
+      return dl.save({ filename: name, data: data }).then(
+        () => onNote('File saved: ' + name),
+        (err) => { if (err && err.code === 'declined') onNote('Download cancelled.'); else fallback(); });
     }, fallback);
+  }
+  saveFile() {
+    this.deliver(this.state.exportName, this.state.exportText, (msg) => this.setState({ exportNote: msg + (msg.indexOf('blocked') >= 0 ? ' Use Copy and save the text as a .json file.' : '') }));
+  }
+
+  /* ---------- PDF ---------- */
+  cleanPdf(p) {
+    p = p && typeof p === 'object' ? p : {};
+    var pick = function (v, list, d) { return list.indexOf(v) >= 0 ? v : d; };
+    var int = function (v) { var n = parseInt(v, 10); return isNaN(n) ? 1 : Math.max(1, Math.min(8, n)); };
+    var bool = function (v, d) { return typeof v === 'boolean' ? v : d; };
+    return {
+      paper: pick(p.paper, ['a4', 'a3', 'letter', 'legal', 'tabloid'], 'a4'),
+      orientation: pick(p.orientation, ['landscape', 'portrait'], 'landscape'),
+      margin: pick(p.margin, ['normal', 'narrow'], 'normal'),
+      layout: pick(p.layout, ['fit', 'spread'], 'fit'),
+      across: int(p.across), down: int(p.down),
+      showDates: bool(p.showDates, true), showProgress: bool(p.showProgress, true),
+      repeatNames: bool(p.repeatNames, true), showToday: bool(p.showToday, true), shadeWeekends: bool(p.shadeWeekends, true)
+    };
+  }
+  setPdf(patch) {
+    this.setState({ pdf: this.cleanPdf(Object.assign({}, this.state.pdf, patch)), pdfNote: '' }, () => this.persistSoon());
+  }
+  pdfOptions() {
+    var p = this.state.pdf, spread = p.layout === 'spread';
+    return Object.assign({}, p, { across: spread ? p.across : 1, down: spread ? p.down : 1, accent: this.props.accent ?? '#1F4FC9' });
+  }
+  savePdf() {
+    var lib = null;
+    try { lib = window.jspdf && window.jspdf.jsPDF; } catch (e) {}
+    if (!lib) { this.setState({ pdfNote: 'The PDF tool has not finished loading. Wait a moment, or reload the page, then try again.' }); return; }
+    var res;
+    try { res = this.buildPdf(lib, { title: this.state.title, tasks: this.state.tasks, today: this.toStr(this.today()) }, this.pdfOptions()); }
+    catch (e) { this.setState({ pdfNote: 'Could not create the PDF: ' + (e && e.message ? e.message : 'unknown error') }); return; }
+    var name = this.slug(this.state.title) + '.pdf';
+    var blob = res.doc.output('blob');
+    this.setState({ pdfNote: 'Creating ' + res.pages + (res.pages === 1 ? ' page' : ' pages') + '…' });
+    this.deliver(name, blob, (msg) => this.setState({ pdfNote: msg }));
+  }
+  buildPdf(JsPDF, data, opts) {
+  var DAY = 864e5, MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function toNum(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '')); return m ? Math.round(Date.UTC(+m[1], +m[2] - 1, +m[3]) / DAY) : null; }
+  function parts(n) { var d = new Date(n * DAY); return { y: d.getUTCFullYear(), m: d.getUTCMonth(), d: d.getUTCDate(), w: d.getUTCDay() }; }
+  function weekStart(n) { return n - ((parts(n).w + 6) % 7); }
+  function nextMonth(n) { var p = parts(n); return Math.round(Date.UTC(p.y, p.m + 1, 1) / DAY); }
+  function nice(n) { var p = parts(n); return p.d + ' ' + MONTHS[p.m] + ' ' + p.y; }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function rgb(hex) { var m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || ''); return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [70, 82, 95]; }
+  function tint(hex, k) { var c = rgb(hex); return c.map(function (v) { return Math.round(v + (255 - v) * k); }); }
+
+  var o = Object.assign({ paper: 'a4', orientation: 'landscape', across: 1, down: 1, margin: 'normal',
+    showDates: true, showProgress: true, repeatNames: true, showToday: true, shadeWeekends: true, accent: '#1F4FC9' }, opts || {});
+  var doc = new JsPDF({ orientation: o.orientation, unit: 'pt', format: o.paper, compress: true });
+  var PW = doc.internal.pageSize.getWidth(), PH = doc.internal.pageSize.getHeight();
+  var M = o.margin === 'narrow' ? 20 : 36;
+  var aw = PW - 2 * M, ah = PH - 2 * M;
+  var INK = [22, 32, 42], MUTED = [77, 91, 105], LINE = [213, 219, 225], SOFT = [232, 236, 240], SHADE = [243, 245, 247];
+
+  var tasks = (data.tasks || []).map(function (t) {
+    var s = toNum(t.start), e = toNum(t.end); if (s == null) s = toNum(data.today) || 0; if (e == null || e < s) e = s;
+    return { name: String(t.name || 'Untitled task'), s: s, e: t.milestone ? s : e, progress: clamp(+t.progress || 0, 0, 100), color: t.color, milestone: !!t.milestone };
+  });
+  var n = tasks.length;
+  var today = toNum(data.today);
+
+  // Date range: a little padding around the work, aligned to whole weeks.
+  var lo = null, hi = null;
+  tasks.forEach(function (t) { if (lo == null || t.s < lo) lo = t.s; if (hi == null || t.e > hi) hi = t.e; });
+  if (lo == null) { lo = today || 0; hi = lo + 27; }
+  var min = weekStart(lo - 2), max = weekStart(hi + 3) + 6, days = max - min + 1;
+
+  var across = clamp(parseInt(o.across, 10) || 1, 1, 8);
+  var downWanted = clamp(parseInt(o.down, 10) || 1, 1, 8);
+  var rowsPerPage = Math.max(1, Math.ceil(Math.max(n, 1) / downWanted));
+  var down = Math.max(1, Math.ceil(Math.max(n, 1) / rowsPerPage));
+
+  // Vertical metrics.
+  var titleH = 30, headH = 30, footH = 16;
+  var bodyH = ah - titleH - headH - footH;
+  var rowH = Math.min(24, bodyH / rowsPerPage);
+  var fs = clamp(rowH * 0.48, 4.5, 9);
+
+  // Left table metrics.
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(fs);
+  var numW = doc.getTextWidth('000') + fs * 1.8;
+  var dateW = o.showDates ? doc.getTextWidth('30 Sep 26') + fs * 1.4 : 0;
+  var daysW = o.showDates ? doc.getTextWidth('Days') + fs * 1.4 : 0;
+  var progW = o.showProgress ? doc.getTextWidth('100%') + fs * 1.4 : 0;
+  var nameW = clamp(aw * 0.2, 80, 190);
+  var L = numW + nameW + dateW * 2 + daysW + progW;
+  if (L > aw * 0.55) { nameW = Math.max(50, nameW - (L - aw * 0.55)); L = numW + nameW + dateW * 2 + daysW + progW; }
+
+  // Horizontal tiling of the timeline.
+  var tw = [], offs = [], total = 0;
+  for (var c = 0; c < across; c++) { var w = (c === 0 || o.repeatNames) ? aw - L : aw; offs.push(total); tw.push(w); total += w; }
+  var dw = total / days;
+  var unit = dw >= 13 ? 'day' : (dw * 7 >= 20 ? 'week' : 'month');
+  var shadeWeekends = o.shadeWeekends && dw >= 6;
+
+  function cells() {
+    var out = [], n2;
+    if (unit === 'day') for (n2 = min; n2 <= max; n2++) out.push({ a: n2, b: n2, label: String(parts(n2).d) });
+    else if (unit === 'week') for (n2 = min; n2 <= max; n2 += 7) out.push({ a: n2, b: Math.min(n2 + 6, max), label: String(parts(n2).d) });
+    else for (n2 = Math.round(Date.UTC(parts(min).y, parts(min).m, 1) / DAY); n2 <= max; n2 = nextMonth(n2)) out.push({ a: Math.max(n2, min), b: Math.min(nextMonth(n2) - 1, max), label: MONTHS[parts(n2).m] });
+    return out;
+  }
+  function groups() {
+    var out = [], n2 = min;
+    while (n2 <= max) {
+      var p = parts(n2), end;
+      if (unit === 'month') { end = Math.min(Math.round(Date.UTC(p.y + 1, 0, 1) / DAY) - 1, max); out.push({ a: n2, b: end, label: String(p.y) }); }
+      else { end = Math.min(nextMonth(n2) - 1, max); out.push({ a: n2, b: end, label: MONTHS[p.m] + ' ' + p.y }); }
+      n2 = end + 1;
+    }
+    return out;
+  }
+  var CELLS = cells(), GROUPS = groups();
+
+  function fit(text, width) {
+    text = String(text);
+    if (doc.getTextWidth(text) <= width) return text;
+    while (text.length > 1 && doc.getTextWidth(text + '...') > width) text = text.slice(0, -1);
+    return text + '...';
+  }
+  function short(n2) { var p = parts(n2); return p.d + ' ' + MONTHS[p.m] + ' ' + String(p.y).slice(2); }
+  function fill(c) { doc.setFillColor(c[0], c[1], c[2]); }
+  function stroke(c) { doc.setDrawColor(c[0], c[1], c[2]); }
+  function ink(c) { doc.setTextColor(c[0], c[1], c[2]); }
+
+  var pageCount = across * down, pageNo = 0;
+  var printed = data.printedOn ? toNum(data.printedOn) : today;
+
+  for (var r = 0; r < down; r++) {
+    var slice = tasks.slice(r * rowsPerPage, (r + 1) * rowsPerPage);
+    for (c = 0; c < across; c++) {
+      if (pageNo > 0) doc.addPage();
+      pageNo++;
+      var top = M;
+
+      // Title strip
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(13); ink(INK);
+      var right = (printed != null ? 'Printed ' + nice(printed) : '') + (pageCount > 1 ? '   Page ' + pageNo + ' of ' + pageCount + ' (row ' + (r + 1) + ', column ' + (c + 1) + ')' : '');
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+      var rightW = doc.getTextWidth(right);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+      doc.text(fit(data.title || 'Untitled project', aw - rightW - 16), M, top + 14);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); ink(MUTED);
+      doc.text(right, M + aw, top + 14, { align: 'right' });
+
+      var gy = top + titleH;           // grid top (header)
+      var by = gy + headH;             // body top
+      var bh = Math.max(slice.length, 1) * rowH;
+      var showLeft = c === 0 || o.repeatNames;
+      var x0 = M + (showLeft ? L : 0); // timeline left
+      var tW = tw[c];
+
+      // Row stripes across the full width
+      slice.forEach(function (t, i) { if (i % 2 === 1) { fill([248, 249, 250]); doc.rect(M, by + i * rowH, (x0 - M) + tW, rowH, 'F'); } });
+
+      // Left table
+      if (showLeft) {
+        doc.setFontSize(fs); ink(MUTED); doc.setFont('helvetica', 'bold');
+        var hx = M, hy = by - 6;
+        doc.text('#', hx + numW / 2, hy, { align: 'center' }); hx += numW;
+        doc.text('Task', hx + 2, hy); hx += nameW;
+        if (o.showDates) { doc.text('Start', hx + 2, hy); hx += dateW; doc.text('End', hx + 2, hy); hx += dateW; doc.text('Days', hx + daysW - 3, hy, { align: 'right' }); hx += daysW; }
+        if (o.showProgress) { doc.text('Done', hx + progW - 3, hy, { align: 'right' }); }
+        doc.setFont('helvetica', 'normal');
+        slice.forEach(function (t, i) {
+          var y = by + i * rowH + rowH / 2 + fs * 0.35, x = M, idx = r * rowsPerPage + i + 1;
+          fill(rgb(t.color)); doc.rect(x + 3, by + i * rowH + rowH / 2 - fs * 0.3, fs * 0.6, fs * 0.6, 'F');
+          ink(MUTED); doc.text(String(idx), x + numW - 3, y, { align: 'right' }); x += numW;
+          ink(INK); doc.text(fit(t.name, nameW - 6), x + 2, y); x += nameW;
+          if (o.showDates) {
+            ink(INK); doc.text(short(t.s), x + 2, y); x += dateW;
+            doc.text(short(t.e), x + 2, y); x += dateW;
+            doc.text(t.milestone ? '0' : String(t.e - t.s + 1), x + daysW - 3, y, { align: 'right' }); x += daysW;
+          }
+          if (o.showProgress) { ink(INK); doc.text(t.progress + '%', x + progW - 3, y, { align: 'right' }); }
+        });
+        stroke(LINE); doc.setLineWidth(0.6); doc.line(x0, gy, x0, by + bh);
+      }
+
+      // Timeline, clipped to this page's slice
+      var off = offs[c];
+      var X = function (dn) { return x0 + (dn - min) * dw - off; };
+      doc.saveGraphicsState();
+      doc.rect(x0, gy, tW, headH + bh, null); doc.clip(); doc.discardPath();
+
+      if (shadeWeekends) {
+        fill(SHADE);
+        for (var dn = min; dn <= max; dn++) { var wd = parts(dn).w; if (wd === 0 || wd === 6) doc.rect(X(dn), by, dw, bh, 'F'); }
+      }
+      // Vertical grid lines and header cells
+      doc.setLineWidth(0.4);
+      CELLS.forEach(function (cl) {
+        var cx = X(cl.a), cw = (cl.b - cl.a + 1) * dw;
+        if (cx + cw < x0 || cx > x0 + tW) return;
+        stroke(SOFT); doc.line(cx, gy + headH / 2, cx, by + bh);
+        doc.setFontSize(Math.min(7, fs)); ink(MUTED);
+        if (doc.getTextWidth(cl.label) + 2 < cw) doc.text(cl.label, cx + cw / 2, gy + headH - 5, { align: 'center' });
+      });
+      GROUPS.forEach(function (g) {
+        var gx = X(g.a), gw = (g.b - g.a + 1) * dw;
+        if (gx + gw < x0 || gx > x0 + tW) return;
+        stroke(LINE); doc.line(gx, gy, gx, gy + headH / 2);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); ink(INK);
+        var lx = Math.max(gx, x0) + 3, room = Math.min(gx + gw, x0 + tW) - lx - 2;
+        if (room > 24) doc.text(fit(g.label, room), lx, gy + headH / 2 - 5);
+        doc.setFont('helvetica', 'normal');
+      });
+      stroke(SOFT); doc.line(x0, gy + headH / 2, x0 + tW, gy + headH / 2);
+
+      // Bars
+      slice.forEach(function (t, i) {
+        var y = by + i * rowH, bhgt = Math.max(3, rowH * 0.56), bt = y + (rowH - bhgt) / 2;
+        var c0 = rgb(t.color);
+        if (t.milestone) {
+          var cx = X(t.s) + dw / 2, cy = y + rowH / 2, s2 = Math.max(3, bhgt * 0.62);
+          fill(c0); doc.triangle(cx - s2, cy, cx, cy - s2, cx + s2, cy, 'F'); doc.triangle(cx - s2, cy, cx, cy + s2, cx + s2, cy, 'F');
+          if (!showLeft) { doc.setFontSize(fs); ink(INK); doc.text(t.name, cx + s2 + 4, cy + fs * 0.35); }
+          return;
+        }
+        var bx = X(t.s), bw = (t.e - t.s + 1) * dw;
+        fill(tint(t.color, 0.78)); doc.rect(bx, bt, bw, bhgt, 'F');
+        if (t.progress > 0) { fill(c0); doc.rect(bx, bt, bw * t.progress / 100, bhgt, 'F'); }
+        stroke(c0); doc.setLineWidth(0.8); doc.rect(bx, bt, bw, bhgt, 'S');
+        if (!showLeft) { doc.setFontSize(fs); ink(INK); doc.text(t.name, bx + bw + 4, y + rowH / 2 + fs * 0.35); }
+      });
+
+      // Today line
+      if (o.showToday && today != null && today >= min && today <= max) {
+        var tx = X(today) + dw / 2, ac = rgb(o.accent);
+        stroke(ac); doc.setLineWidth(1); doc.line(tx, gy + headH / 2, tx, by + bh);
+      }
+      doc.restoreGraphicsState();
+
+      // Frame and row lines
+      stroke(LINE); doc.setLineWidth(0.6);
+      doc.line(M, by, x0 + tW, by);
+      doc.line(M, by + bh, x0 + tW, by + bh);
+      stroke(SOFT); doc.setLineWidth(0.3);
+      for (var k = 1; k < slice.length; k++) doc.line(M, by + k * rowH, x0 + tW, by + k * rowH);
+
+      if (!n) { doc.setFontSize(10); ink(MUTED); doc.text('No tasks in this project yet.', M + 6, by + 14); }
+
+      // Footer
+      doc.setFontSize(7.5); ink(MUTED);
+      var foot = (n ? nice(lo) + ' to ' + nice(hi) + ' (' + (hi - lo + 1) + ' days), ' + n + (n === 1 ? ' task' : ' tasks') : '');
+      doc.text(foot, M, PH - M);
+      if (o.showToday) { stroke(rgb(o.accent)); doc.setLineWidth(1); doc.line(M + aw - 40, PH - M - 2.5, M + aw - 30, PH - M - 2.5); doc.text('Today', M + aw, PH - M, { align: 'right' }); }
+    }
+  }
+  return { doc: doc, pages: pageCount, rowsPerPage: rowsPerPage, across: across, down: down, rowH: rowH, fontSize: fs, unit: unit };
+}
+  pdfView(accent) {
+    var p = this.state.pdf, spread = p.layout === 'spread';
+    var across = spread ? p.across : 1, want = spread ? p.down : 1;
+    var n = Math.max(this.state.tasks.length, 1);
+    var rpp = Math.ceil(n / want), down = Math.ceil(n / rpp), pages = across * down;
+    var dims = { a4: [595.28, 841.89], a3: [841.89, 1190.55], letter: [612, 792], legal: [612, 1008], tabloid: [792, 1224] }[p.paper];
+    var w = p.orientation === 'landscape' ? dims[1] : dims[0], h = p.orientation === 'landscape' ? dims[0] : dims[1];
+    var m = p.margin === 'narrow' ? 20 : 36;
+    var rowH = Math.min(24, (h - 2 * m - 76) / rpp);
+    var tileW = Math.round(Math.min(p.orientation === 'landscape' ? 112 : 80, 300 / across));
+    var tiles = [];
+    for (var i = 0; i < pages; i++) tiles.push({ label: String(i + 1) });
+    var info = pages + (pages === 1 ? ' page' : ' pages') + (pages > 1 ? ' (' + across + ' wide × ' + down + ' tall)' : '') + ', up to ' + rpp + (rpp === 1 ? ' task' : ' tasks') + ' per page.';
+    if (spread && want > down) info += ' Only ' + down + ' tall ' + (down === 1 ? 'is' : 'are') + ' needed for ' + this.state.tasks.length + ' tasks.';
+    var warning = rowH < 9 ? 'Rows will be very small. Add pages tall, choose a bigger paper size, or switch orientation.' : '';
+    var self = this;
+    var toggle = function (k) { return function (ev) { var o = {}; o[k] = !!ev.target.checked; self.setPdf(o); }; };
+    return {
+      paper: p.paper, orientation: p.orientation, margin: p.margin, across: across, down: p.down,
+      isFit: !spread, isSpread: spread, showDates: p.showDates, showProgress: p.showProgress,
+      repeatNames: p.repeatNames, showToday: p.showToday, shadeWeekends: p.shadeWeekends,
+      tileW: tileW, tileH: Math.round(tileW * h / w), tiles: tiles, info: info, warning: warning, hasWarning: !!warning,
+      onPaper: (ev) => this.setPdf({ paper: ev.target.value }),
+      onOrientation: (ev) => this.setPdf({ orientation: ev.target.value }),
+      onMargin: (ev) => this.setPdf({ margin: ev.target.value }),
+      setFit: () => this.setPdf({ layout: 'fit' }),
+      setSpread: () => this.setPdf({ layout: 'spread', across: p.layout === 'spread' ? p.across : Math.max(p.across, 2) }),
+      onAcross: (ev) => this.setPdf({ across: ev.target.value }),
+      onDown: (ev) => this.setPdf({ down: ev.target.value }),
+      toggle_showDates: toggle('showDates'), toggle_showProgress: toggle('showProgress'),
+      toggle_repeatNames: toggle('repeatNames'), toggle_showToday: toggle('showToday'), toggle_shadeWeekends: toggle('shadeWeekends')
+    };
   }
   copyExport() {
     var text = this.state.exportText;
@@ -754,7 +1157,9 @@ class Component extends DCLogic {
       }),
       sel: sel || { depOptions: [], swatches: [] }, hasSelection: !!sel, noSelection: !sel,
       projects: projects, storageOk: !!st.storageOk, status: status,
-      showExport: st.panel === 'export', showImport: st.panel === 'import',
+      showExport: st.panel === 'export', showImport: st.panel === 'import', showPdf: st.panel === 'pdf',
+      pdf: this.pdfView(accent), pdfNote: st.pdfNote, hasPdfNote: !!st.pdfNote,
+      openPdf: () => this.setState({ panel: 'pdf', pdfNote: '' }),
       exportText: st.exportText, exportNote: st.exportNote, hasExportNote: !!st.exportNote,
       copyLabel: st.copied ? 'Copied' : 'Copy',
       importText: st.importText, importError: st.importError, hasImportError: !!st.importError,
