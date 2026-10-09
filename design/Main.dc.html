@@ -66,6 +66,10 @@ Add task
 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"></path><circle cx="5" cy="4" r="1.5" fill="#FFFFFF"></circle><circle cx="11" cy="8" r="1.5" fill="#FFFFFF"></circle><circle cx="7" cy="12" r="1.5" fill="#FFFFFF"></circle></svg>
 Columns and lines
 </button>
+<button type="button" onClick="{{toggleCompact}}" aria-pressed="{{compactStr}}" style="height: 44px; padding: 0 16px; border-radius: 8px; font: inherit; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; {{compactStyle}}">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2 3h12M2 6.3h12M2 9.7h12M2 13h12"></path></svg>
+Compact rows
+</button>
 </div>
 <div style="display: flex; flex-wrap: wrap; gap: 16px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; color: #4D5B69">
 <span>{{summary.count}}</span>
@@ -122,15 +126,15 @@ Columns and lines
 <span style="text-align: right; padding-right: 6px; display: {{cols.progress}}">Done %</span>
 </div>
 <sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
-<div class="gb-row" style="grid-template-columns: {{gridCols}}; height: 44px; align-items: center; padding-right: 8px; border-bottom: 1px solid #E3E8ED; box-sizing: border-box; background: {{r.rowBg}}">
-<button type="button" onClick="{{r.select}}" aria-label="{{r.selectLabel}}" style="height: 36px; width: 32px; margin-left: 4px; border: 0; border-radius: 6px; background: transparent; color: #4D5B69; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px">
+<div class="gb-row" style="grid-template-columns: {{gridCols}}; height: {{dim.row}}px; align-items: center; padding-right: 8px; border-bottom: 1px solid #E3E8ED; box-sizing: border-box; background: {{r.rowBg}}">
+<button type="button" onClick="{{r.select}}" aria-label="{{r.selectLabel}}" style="height: {{dim.pick}}px; width: 32px; margin-left: 4px; border: 0; border-radius: 6px; background: transparent; color: #4D5B69; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px">
 <span style="width: 8px; height: 8px; border-radius: 2px; flex: none; background: {{r.color}}"></span>{{r.num}}
 </button>
-<input class="gb-cell" type="text" value="{{r.name}}" onChange="{{r.onName}}" onFocus="{{r.select}}" aria-label="Task name" style="height: 34px; width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 0 6px; font: inherit; color: #16202A">
-<input class="gb-cell gb-wide" type="date" value="{{r.start}}" onChange="{{r.onStart}}" onFocus="{{r.select}}" aria-label="Start date" style="display: {{cols.start}}; height: 34px; width: 100%; box-sizing: border-box; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 0 4px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #16202A">
-<input class="gb-cell gb-wide" type="date" value="{{r.end}}" onChange="{{r.onEnd}}" onFocus="{{r.select}}" aria-label="End date" style="display: {{cols.end}}; height: 34px; width: 100%; box-sizing: border-box; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 0 4px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #16202A">
-<input class="gb-cell gb-wide" type="number" min="0" max="999" value="{{r.days}}" onChange="{{r.onDays}}" onFocus="{{r.select}}" aria-label="Duration in days" style="display: {{cols.days}}; height: 34px; width: 100%; box-sizing: border-box; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 0 4px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #16202A">
-<input class="gb-cell" type="number" min="0" max="100" step="5" value="{{r.progress}}" onChange="{{r.onProgress}}" onFocus="{{r.select}}" aria-label="Percent complete" style="display: {{cols.progress}}; height: 34px; width: 100%; box-sizing: border-box; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 0 4px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #16202A">
+<input class="gb-cell" type="text" value="{{r.name}}" onChange="{{r.onName}}" onFocus="{{r.select}}" aria-label="Task name" style="height: {{dim.input}}px; width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 0 6px; font: inherit; color: #16202A">
+<input class="gb-cell gb-wide" type="date" value="{{r.start}}" onChange="{{r.onStart}}" onFocus="{{r.select}}" aria-label="Start date" style="display: {{cols.start}}; height: {{dim.input}}px; width: 100%; box-sizing: border-box; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 0 4px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #16202A">
+<input class="gb-cell gb-wide" type="date" value="{{r.end}}" onChange="{{r.onEnd}}" onFocus="{{r.select}}" aria-label="End date" style="display: {{cols.end}}; height: {{dim.input}}px; width: 100%; box-sizing: border-box; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 0 4px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #16202A">
+<input class="gb-cell gb-wide" type="number" min="0" max="999" value="{{r.days}}" onChange="{{r.onDays}}" onFocus="{{r.select}}" aria-label="Duration in days" style="display: {{cols.days}}; height: {{dim.input}}px; width: 100%; box-sizing: border-box; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 0 4px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #16202A">
+<input class="gb-cell" type="number" min="0" max="100" step="5" value="{{r.progress}}" onChange="{{r.onProgress}}" onFocus="{{r.select}}" aria-label="Percent complete" style="display: {{cols.progress}}; height: {{dim.input}}px; width: 100%; box-sizing: border-box; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 0 4px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #16202A">
 </div>
 </sc-for>
 <sc-if value="{{isEmpty}}" hint-placeholder-val="{{false}}">
@@ -161,19 +165,19 @@ Columns and lines
 <div aria-hidden="true" style="position: absolute; z-index: 3; pointer-events: none; box-sizing: content-box; {{d.style}}"></div>
 </sc-for>
 <sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
-<div style="position: relative; z-index: 1; height: 44px; border-bottom: 1px solid #E3E8ED; box-sizing: border-box; background: {{r.rowBgTimeline}}">
+<div style="position: relative; z-index: 1; height: {{dim.row}}px; border-bottom: 1px solid #E3E8ED; box-sizing: border-box; background: {{r.rowBgTimeline}}">
 <sc-if value="{{r.isBar}}" hint-placeholder-val="{{true}}">
-<button type="button" class="gb-bar" aria-label="{{r.barLabel}}" onClick="{{r.select}}" onPointerDown="{{r.moveDown}}" onPointerMove="{{r.dragMove}}" onPointerUp="{{r.dragUp}}" onPointerCancel="{{r.dragUp}}" onKeyDown="{{r.keyDown}}" style="position: absolute; top: 10px; height: 24px; padding: 0; border-width: 1.5px; border-style: solid; border-radius: 6px; overflow: hidden; cursor: grab; touch-action: none; box-sizing: border-box; {{r.barStyle}}">
+<button type="button" class="gb-bar" aria-label="{{r.barLabel}}" onClick="{{r.select}}" onPointerDown="{{r.moveDown}}" onPointerMove="{{r.dragMove}}" onPointerUp="{{r.dragUp}}" onPointerCancel="{{r.dragUp}}" onKeyDown="{{r.keyDown}}" style="position: absolute; top: {{dim.barTop}}px; height: {{dim.barH}}px; padding: 0; border-width: 1.5px; border-style: solid; border-radius: 6px; overflow: hidden; cursor: grab; touch-action: none; box-sizing: border-box; {{r.barStyle}}">
 <span style="display: block; height: 100%; {{r.progStyle}}"></span>
 </button>
-<button type="button" aria-label="{{r.resizeLabel}}" onPointerDown="{{r.resizeDown}}" onPointerMove="{{r.dragMove}}" onPointerUp="{{r.dragUp}}" onPointerCancel="{{r.dragUp}}" onKeyDown="{{r.resizeKey}}" style="position: absolute; top: 8px; width: 14px; height: 28px; padding: 0; border: 0; background: transparent; cursor: ew-resize; touch-action: none; display: flex; align-items: center; justify-content: center; {{r.handleStyle}}">
+<button type="button" aria-label="{{r.resizeLabel}}" onPointerDown="{{r.resizeDown}}" onPointerMove="{{r.dragMove}}" onPointerUp="{{r.dragUp}}" onPointerCancel="{{r.dragUp}}" onKeyDown="{{r.resizeKey}}" style="position: absolute; top: {{dim.handleTop}}px; width: 14px; height: {{dim.handleH}}px; padding: 0; border: 0; background: transparent; cursor: ew-resize; touch-action: none; display: flex; align-items: center; justify-content: center; {{r.handleStyle}}">
 <span style="width: 4px; height: 14px; border-radius: 2px; background: #FFFFFF; border: 1px solid #4D5B69"></span>
 </button>
 </sc-if>
 <sc-if value="{{r.isMilestone}}" hint-placeholder-val="{{false}}">
-<button type="button" class="gb-bar" aria-label="{{r.barLabel}}" onClick="{{r.select}}" onPointerDown="{{r.moveDown}}" onPointerMove="{{r.dragMove}}" onPointerUp="{{r.dragUp}}" onPointerCancel="{{r.dragUp}}" onKeyDown="{{r.keyDown}}" style="position: absolute; top: 12px; width: 20px; height: 20px; padding: 0; border: 2px solid #FFFFFF; border-radius: 3px; transform: rotate(45deg); cursor: grab; touch-action: none; box-sizing: border-box; {{r.diamondStyle}}"></button>
+<button type="button" class="gb-bar" aria-label="{{r.barLabel}}" onClick="{{r.select}}" onPointerDown="{{r.moveDown}}" onPointerMove="{{r.dragMove}}" onPointerUp="{{r.dragUp}}" onPointerCancel="{{r.dragUp}}" onKeyDown="{{r.keyDown}}" style="position: absolute; top: {{dim.diaTop}}px; width: {{dim.dia}}px; height: {{dim.dia}}px; padding: 0; border: 2px solid #FFFFFF; border-radius: 3px; transform: rotate(45deg); cursor: grab; touch-action: none; box-sizing: border-box; {{r.diamondStyle}}"></button>
 </sc-if>
-<span style="position: absolute; top: 0; height: 44px; display: flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; pointer-events: none; color: #16202A; {{r.labelStyle}}">{{r.label}}<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: #4D5B69">{{r.labelMeta}}</span></span>
+<span style="position: absolute; top: 0; height: {{dim.row}}px; display: flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; pointer-events: none; color: #16202A; {{r.labelStyle}}">{{r.label}}<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: #4D5B69">{{r.labelMeta}}</span></span>
 </div>
 </sc-for>
 </div>
@@ -229,9 +233,9 @@ Columns and lines
 </sc-if>
 
 <sc-if value="{{showPdf}}" hint-placeholder-val="{{false}}">
-<section aria-label="Save as PDF" style="background: #FFFFFF; border: 1px solid #D5DBE1; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px">
+<section id="gb-pdf-panel" aria-label="Save as PDF" style="scroll-margin-top: 16px; background: #FFFFFF; border: 1px solid #D5DBE1; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px">
 <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
-<h2 style="margin: 0; font-size: 18px; font-weight: 600">Save as PDF</h2>
+<h2 id="gb-pdf-heading" tabindex="-1" style="margin: 0; font-size: 18px; font-weight: 600; outline: none">Save as PDF</h2>
 <div style="display: flex; flex-wrap: wrap; gap: 8px">
 <button type="button" onClick="{{savePdf}}" style="height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid {{accent}}; background: {{accent}}; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Save PDF</button>
 <button type="button" onClick="{{closePanel}}" style="height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #C7CFD8; background: #FFFFFF; color: #16202A; font: inherit; font-weight: 500; cursor: pointer">Close</button>
@@ -450,7 +454,7 @@ class Component extends DCLogic {
       pendingDelete: '', panel: '', exportText: '', exportUrl: '', exportName: '', exportNote: '',
       copied: false, importText: '', importError: '',
       pdf: this.cleanPdf(null), pdfNote: '',
-      zoom: 1, hidden: this.cleanHidden(null), showDeps: true, viewOpen: false
+      zoom: 1, hidden: this.cleanHidden(null), showDeps: true, viewOpen: false, compact: false
     };
   }
 
@@ -577,7 +581,7 @@ class Component extends DCLogic {
     var p = all[id]; if (!p) return;
     var tasks = (Array.isArray(p.tasks) ? p.tasks : []).slice(0, 500).map((t, i) => this.clean(t, i));
     var scale = ['day', 'week', 'month'].indexOf(p.scale) >= 0 ? p.scale : 'week';
-    this.setState({ id: id, title: String(p.title || 'Untitled project').slice(0, 200), tasks: this.schedule(tasks), scale: scale, pdf: this.cleanPdf(p.pdf), zoom: this.cleanZoom(p.zoom), hidden: this.cleanHidden(p.hidden), showDeps: p.showDeps !== false,
+    this.setState({ id: id, title: String(p.title || 'Untitled project').slice(0, 200), tasks: this.schedule(tasks), scale: scale, pdf: this.cleanPdf(p.pdf), zoom: this.cleanZoom(p.zoom), hidden: this.cleanHidden(p.hidden), showDeps: p.showDeps !== false, compact: !!p.compact,
       selectedId: '', storageOk: true, booted: true, savedAt: p.savedAt || 0, pendingDelete: '', panel: '' });
     var ls = this.store(); if (ls) { try { ls.setItem('gantt-builder:last', id); } catch (e) {} }
   }
@@ -585,7 +589,7 @@ class Component extends DCLogic {
     var ls = this.store();
     if (!ls) { this.setState({ storageOk: false }); return; }
     var all = this.readAll(), now = Date.now();
-    all[this.state.id] = { title: this.state.title, tasks: this.state.tasks, scale: this.state.scale, pdf: this.state.pdf, zoom: this.state.zoom, hidden: this.state.hidden, showDeps: this.state.showDeps, savedAt: now };
+    all[this.state.id] = { title: this.state.title, tasks: this.state.tasks, scale: this.state.scale, pdf: this.state.pdf, zoom: this.state.zoom, hidden: this.state.hidden, showDeps: this.state.showDeps, compact: this.state.compact, savedAt: now };
     var ok = this.writeAll(all);
     if (ok) { try { ls.setItem('gantt-builder:last', this.state.id); } catch (e) {} }
     this.setState({ storageOk: ok, savedAt: ok ? now : this.state.savedAt, rev: this.state.rev + 1 });
@@ -682,10 +686,10 @@ class Component extends DCLogic {
     return c.join(' ');
   }
   depSegments(tasks, tl, color, hiColor) {
-    var segs = [], pos = {}, ROW = 44, selId = this.state.selectedId;
+    var dm = this.dims(), segs = [], pos = {}, ROW = dm.row, selId = this.state.selectedId, half = dm.dia * 0.71;
     tasks.forEach((t, i) => {
       var s = this.toNum(t.start), e = this.toNum(t.end), left = (s - tl.min) * tl.ppd, y = i * ROW + ROW / 2;
-      if (t.milestone) { var cx = left + tl.ppd / 2; pos[t.id] = { l: cx - 14, r: cx + 14, y: y }; }
+      if (t.milestone) { var cx = left + tl.ppd / 2; pos[t.id] = { l: cx - half, r: cx + half, y: y }; }
       else pos[t.id] = { l: left, r: left + (e - s + 1) * tl.ppd, y: y };
     });
     var H = function (xa, xb, y, c) { var a = Math.min(xa, xb), b = Math.max(xa, xb); if (b - a < 0.5) return; segs.push({ style: 'left: ' + a + 'px; top: ' + (y - 0.75) + 'px; width: ' + (b - a) + 'px; height: 0; border-top: 1.5px solid ' + c + ';' }); };
@@ -815,6 +819,24 @@ class Component extends DCLogic {
       repeatNames: bool(p.repeatNames, true), showToday: bool(p.showToday, true), shadeWeekends: bool(p.shadeWeekends, true),
       showDeps: bool(p.showDeps, true)
     };
+  }
+  dims() {
+    // Compact rows are 60% of the default 44px row height.
+    return this.state.compact
+      ? { row: 26, pick: 22, input: 22, barTop: 5, barH: 16, handleTop: 3, handleH: 20, dia: 14, diaTop: 6 }
+      : { row: 44, pick: 36, input: 34, barTop: 10, barH: 24, handleTop: 8, handleH: 28, dia: 20, diaTop: 12 };
+  }
+  openPdf() {
+    this.setState({ panel: 'pdf', pdfNote: '' }, () => {
+      setTimeout(() => {
+        try {
+          var el = document.getElementById('gb-pdf-panel');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          var h = document.getElementById('gb-pdf-heading');
+          if (h) h.focus({ preventScroll: true });
+        } catch (e) {}
+      }, 30);
+    });
   }
   setHidden(k, v) { var h = Object.assign({}, this.state.hidden); h[k] = v; this.setState({ hidden: h }, () => this.persistSoon()); }
   setPdf(patch) {
@@ -1181,6 +1203,7 @@ class Component extends DCLogic {
     var index = {}; tasks.forEach(function (t, i) { index[t.id] = i; });
     var selBg = accent + '14';
 
+    var dims = this.dims();
     var rows = tasks.map((t, i) => {
       var s = this.toNum(t.start), e = this.toNum(t.end);
       var days = t.milestone ? 0 : e - s + 1;
@@ -1199,7 +1222,7 @@ class Component extends DCLogic {
         barStyle: 'left: ' + left + 'px; width: ' + width + 'px; border-color: ' + t.color + '; background: ' + t.color + '2E;' + (isSel ? ' box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px ' + t.color + ';' : ''),
         progStyle: 'width: ' + t.progress + '%; background: ' + t.color + ';',
         handleStyle: 'left: ' + (left + width - 7) + 'px;',
-        diamondStyle: 'left: ' + (left + tl.ppd / 2 - 10) + 'px; background: ' + t.color + ';' + (isSel ? ' box-shadow: 0 0 0 2px ' + t.color + ';' : ''),
+        diamondStyle: 'left: ' + (left + tl.ppd / 2 - dims.dia / 2) + 'px; background: ' + t.color + ';' + (isSel ? ' box-shadow: 0 0 0 2px ' + t.color + ';' : ''),
         labelStyle: 'left: ' + labelLeft + 'px;',
         label: t.name || 'Untitled task', labelMeta: meta,
         select: () => { if (st.selectedId !== t.id) this.setState({ selectedId: t.id }); },
@@ -1285,7 +1308,10 @@ class Component extends DCLogic {
       projects: projects, storageOk: !!st.storageOk, status: status,
       showExport: st.panel === 'export', showImport: st.panel === 'import', showPdf: st.panel === 'pdf',
       pdf: this.pdfView(accent), pdfNote: st.pdfNote, hasPdfNote: !!st.pdfNote,
-      leftW: this.leftWidth(), gridCols: this.gridCols(),
+      leftW: this.leftWidth(), gridCols: this.gridCols(), dim: dims,
+      compactStr: String(!!st.compact),
+      compactStyle: st.compact ? 'border: 1px solid ' + accent + '; background: ' + accent + '; color: #FFFFFF;' : 'border: 1px solid #C7CFD8; background: #FFFFFF; color: #16202A;',
+      toggleCompact: () => this.setState({ compact: !st.compact }, () => this.persistSoon()),
       cols: { start: st.hidden.start ? 'none' : 'block', end: st.hidden.end ? 'none' : 'block', days: st.hidden.days ? 'none' : 'block', progress: st.hidden.progress ? 'none' : 'block' },
       depSegs: st.showDeps ? this.depSegments(tasks, tl, '#6B7785', accent) : [],
       zoomLabel: Math.round(st.zoom * 100) + '%',
@@ -1297,7 +1323,7 @@ class Component extends DCLogic {
         toggle_days: (ev) => this.setHidden('days', !ev.target.checked), toggle_progress: (ev) => this.setHidden('progress', !ev.target.checked),
         toggle_deps: (ev) => this.setState({ showDeps: !!ev.target.checked }, () => this.persistSoon())
       },
-      openPdf: () => this.setState({ panel: 'pdf', pdfNote: '' }),
+      openPdf: () => this.openPdf(),
       exportText: st.exportText, exportNote: st.exportNote, hasExportNote: !!st.exportNote,
       copyLabel: st.copied ? 'Copied' : 'Copy',
       importText: st.importText, importError: st.importError, hasImportError: !!st.importError,

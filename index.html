@@ -116,6 +116,16 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
 .tile{background:#fff;border:1px solid var(--field);border-radius:2px;box-shadow:0 1px 2px rgba(22,32,42,.12);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--muted)}
 .warn{color:var(--danger);font-weight:500;font-size:13px}
 [hidden]{display:none !important}
+/* Compact rows: 60% of the default 44px row height */
+.compact .task-row,.compact .tl-row{height:26px}
+.compact .cell,.compact .pick{height:22px}
+.compact .bar{top:5px;height:16px}
+.compact .handle{top:3px;height:20px}
+.compact .diamond{top:6px;width:14px;height:14px}
+.compact .bar-label{height:26px}
+.btn[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:#fff}
+#pdf-panel{scroll-margin-top:16px}
+#pdf-heading:focus{outline:none}
 .hide-start .c-start,.hide-end .c-end,.hide-days .c-days,.hide-progress .c-progress{display:none !important}
 .zoom{display:flex;align-items:center;padding:3px;gap:2px;background:#DDE3E9;border-radius:10px}
 .zoom button{height:38px;min-width:38px;padding:0 10px;border:0;border-radius:8px;background:transparent;font-weight:500;display:flex;align-items:center;justify-content:center}
@@ -170,6 +180,10 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
       <button class="btn" type="button" data-action="toggle-view" aria-expanded="false" aria-controls="view-panel" id="view-btn" style="display:flex;align-items:center;gap:8px">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/><circle cx="5" cy="4" r="1.5" fill="#fff"/><circle cx="11" cy="8" r="1.5" fill="#fff"/><circle cx="7" cy="12" r="1.5" fill="#fff"/></svg>
         Columns and lines
+      </button>
+      <button class="btn" type="button" data-action="toggle-compact" id="compact-btn" aria-pressed="false" style="display:flex;align-items:center;gap:8px">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2 3h12M2 6.3h12M2 9.7h12M2 13h12"/></svg>
+        Compact rows
       </button>
     </div>
     <div class="summary" id="summary"></div>
@@ -247,7 +261,7 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
 
   <section class="card panel" id="pdf-panel" aria-label="Save as PDF" hidden>
     <div class="row-flex" style="justify-content:space-between">
-      <h2>Save as PDF</h2>
+      <h2 id="pdf-heading" tabindex="-1">Save as PDF</h2>
       <div class="row-flex">
         <button class="btn btn-primary" data-action="save-pdf">Save PDF</button>
         <button class="btn" data-action="close-panel">Close</button>
@@ -412,7 +426,7 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
     id: uid(), title: 'Website relaunch', tasks: schedule(sample(weekStart(today()))),
     scale: 'week', selectedId: '', storageOk: false, savedAt: 0, pendingDelete: '',
     panel: '', exportText: '', exportName: '', pdf: null,
-    zoom: 1, hidden: { start: false, end: false, days: false, progress: false }, showDeps: true, viewOpen: false
+    zoom: 1, hidden: { start: false, end: false, days: false, progress: false }, showDeps: true, viewOpen: false, compact: false
   };
   var saveTimer = null, drag = null;
 
@@ -731,7 +745,7 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
     var ls = store();
     if (!ls) { state.storageOk = false; renderProjects(); return; }
     var all = readAll(), now = Date.now();
-    all[state.id] = { title: state.title, tasks: state.tasks, scale: state.scale, pdf: state.pdf, zoom: state.zoom, hidden: state.hidden, showDeps: state.showDeps, savedAt: now };
+    all[state.id] = { title: state.title, tasks: state.tasks, scale: state.scale, pdf: state.pdf, zoom: state.zoom, hidden: state.hidden, showDeps: state.showDeps, compact: state.compact, savedAt: now };
     var ok = writeAll(all);
     if (ok) { try { ls.setItem(KEY_LAST, state.id); } catch (e) {} state.savedAt = now; }
     state.storageOk = ok;
@@ -749,6 +763,7 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
     state.zoom = cleanZoom(p.zoom);
     state.hidden = cleanHidden(p.hidden);
     state.showDeps = p.showDeps !== false;
+    state.compact = !!p.compact;
     state.selectedId = ''; state.pendingDelete = ''; state.panel = '';
     state.savedAt = p.savedAt || 0; state.storageOk = true;
     var ls = store(); if (ls) { try { ls.setItem(KEY_LAST, id); } catch (e) {} }
@@ -918,12 +933,15 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
     $('view-panel').hidden = !state.viewOpen;
     $('view-btn').setAttribute('aria-expanded', String(state.viewOpen));
     $('zoom-label').textContent = Math.round(state.zoom * 100) + '%';
+    chart.classList.toggle('compact', state.compact);
+    $('compact-btn').setAttribute('aria-pressed', String(state.compact));
   }
+  function dims() { return state.compact ? { row: 26, dia: 14 } : { row: 44, dia: 20 }; }
   function depPaths(tl) {
-    var ROW = 44, pos = {}, out = '';
+    var ROW = dims().row, half = dims().dia * 0.71, pos = {}, out = '';
     state.tasks.forEach(function (t, i) {
       var g = barGeom(t, tl), y = i * ROW + ROW / 2;
-      if (t.milestone) { var cx = g.left + tl.ppd / 2; pos[t.id] = { l: cx - 14, r: cx + 14, y: y }; }
+      if (t.milestone) { var cx = g.left + tl.ppd / 2; pos[t.id] = { l: cx - half, r: cx + half, y: y }; }
       else pos[t.id] = { l: g.left, r: g.left + g.width, y: y };
     });
     state.tasks.forEach(function (t) {
@@ -1048,7 +1066,7 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
     html += '</div><div class="tl-body">';
     tl.cells.forEach(function (c) { html += '<div class="tl-col' + (c.shade ? ' shade' : '') + '" aria-hidden="true" style="left:' + c.left + 'px;width:' + c.width + 'px"></div>'; });
     if (tl.showToday) html += '<div class="today-line" aria-hidden="true" style="left:' + tl.todayLeft + 'px"></div>';
-    if (state.showDeps) html += '<svg class="deps" aria-hidden="true" width="' + tl.width + '" height="' + (state.tasks.length * 44) + '">' + depPaths(tl) + '</svg>';
+    if (state.showDeps) html += '<svg class="deps" aria-hidden="true" width="' + tl.width + '" height="' + (state.tasks.length * dims().row) + '">' + depPaths(tl) + '</svg>';
     state.tasks.forEach(function (t) {
       var geo = barGeom(t, tl), sel = t.id === state.selectedId, id = esc(t.id), name = esc(t.name || 'Untitled task');
       var depName = t.dep && index[t.dep] != null ? 'after #' + (index[t.dep] + 1) : '';
@@ -1056,7 +1074,7 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
       var aria = name + ', ' + nice(geo.s) + (t.milestone ? '' : ' to ' + nice(geo.e)) + '. Arrow keys move it.';
       html += '<div class="tl-row' + (sel ? ' selected' : '') + '" data-id="' + id + '">';
       if (t.milestone) {
-        html += '<button type="button" class="diamond" data-drag="move" data-focus="bar-' + id + '" aria-label="' + aria + '" style="left:' + (geo.left + tl.ppd / 2 - 10) + 'px;background:' + t.color + (sel ? ';box-shadow:0 0 0 2px ' + t.color : '') + '"></button>';
+        html += '<button type="button" class="diamond" data-drag="move" data-focus="bar-' + id + '" aria-label="' + aria + '" style="left:' + (geo.left + tl.ppd / 2 - dims().dia / 2) + 'px;background:' + t.color + (sel ? ';box-shadow:0 0 0 2px ' + t.color : '') + '"></button>';
       } else {
         html += '<button type="button" class="bar" data-drag="move" data-focus="bar-' + id + '" aria-label="' + aria + '" style="left:' + geo.left + 'px;width:' + geo.width + 'px;border-color:' + t.color + ';background:' + t.color + '2E' + (sel ? ';box-shadow:0 0 0 2px #fff,0 0 0 4px ' + t.color : '') + '">' +
           '<span style="width:' + t.progress + '%;background:' + t.color + '"></span></button>' +
@@ -1167,7 +1185,12 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
       case 'download': download(); break;
       case 'copy': copyExport(); break;
       case 'import-paste': importData($('import-text').value); break;
-      case 'open-pdf': state.panel = 'pdf'; $('pdf-note').textContent = ''; renderPdf(); renderPanels(); break;
+      case 'open-pdf':
+        state.panel = 'pdf'; $('pdf-note').textContent = ''; renderPdf(); renderPanels();
+        $('pdf-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        $('pdf-heading').focus({ preventScroll: true });
+        break;
+      case 'toggle-compact': state.compact = !state.compact; render(); persistSoon(); break;
       case 'save-pdf': savePdf(); break;
       case 'zoom-in': stepZoom(1); break;
       case 'zoom-out': stepZoom(-1); break;
