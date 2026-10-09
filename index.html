@@ -1,0 +1,807 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sgantt · Gantt Chart Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --ground:#EEF1F4; --surface:#FFFFFF; --ink:#16202A; --muted:#4D5B69;
+  --line:#D5DBE1; --line-soft:#E3E8ED; --field:#C7CFD8; --shade:#F3F5F7;
+  --accent:#1F4FC9; --danger:#A3261F;
+  --sans:'IBM Plex Sans','Helvetica Neue',Helvetica,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:14px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1440px;margin:0 auto;padding:24px;display:flex;flex-direction:column;gap:16px}
+.btn{height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--field);background:var(--surface);font-weight:500}
+.btn-primary{border-color:var(--accent);background:var(--accent);color:#fff;font-weight:600}
+.btn-dashed{border:1px dashed var(--accent);color:var(--accent);font-weight:600;display:flex;align-items:center;gap:8px}
+.btn-danger{border-color:#E2B4AF;color:var(--danger)}
+.row-flex{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+.title-block{display:flex;flex-direction:column;gap:4px;flex:1 1 360px;min-width:0}
+.title-block label{font-family:var(--mono);font-size:12px;color:var(--muted)}
+#title{font-size:30px;font-weight:600;background:transparent;border:1px solid transparent;border-radius:6px;padding:4px 8px;margin-left:-8px;width:100%}
+.cell{border:1px solid transparent;border-radius:6px;background:transparent;height:34px;width:100%;min-width:0;padding:0 6px}
+.cell:hover,#title:hover{border-color:var(--field)}
+.cell:focus,#title:focus{border-color:var(--accent);background:#fff;outline:none}
+.mono{font-family:var(--mono);font-size:12px}
+.num{text-align:right}
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.seg{display:flex;padding:3px;gap:3px;background:#DDE3E9;border-radius:10px}
+.seg button{height:38px;min-width:64px;padding:0 14px;border:0;border-radius:8px;background:transparent;color:#3E4A56;font-weight:500}
+.seg button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(22,32,42,.18)}
+.summary{display:flex;flex-wrap:wrap;gap:16px;font-family:var(--mono);font-size:13px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.chart{overflow:hidden}
+.scroller{overflow-x:auto}
+.chart-inner{display:flex;width:max-content;min-width:100%}
+.left{position:sticky;left:0;z-index:4;flex:none;width:620px;background:#fff;border-right:1px solid var(--line)}
+.grid-row{display:grid;grid-template-columns:40px minmax(150px,1fr) 136px 136px 52px 60px;column-gap:4px;align-items:center;padding-right:8px}
+.left-title{height:28px;display:flex;align-items:center;padding:0 12px;font-weight:600;border-bottom:1px solid var(--line-soft)}
+.col-heads{height:28px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--muted)}
+.col-heads span{padding:0 6px}
+.task-row{height:44px;border-bottom:1px solid var(--line-soft)}
+.task-row.selected,.tl-row.selected{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.pick{height:36px;width:32px;margin-left:4px;border:0;border-radius:6px;background:transparent;color:var(--muted);font-family:var(--mono);font-size:12px;display:flex;align-items:center;justify-content:center;gap:4px}
+.dot{width:8px;height:8px;border-radius:2px;flex:none}
+.empty{height:88px;display:flex;align-items:center;padding:0 16px;color:var(--muted)}
+.tl{position:relative;flex:none}
+.tl-head{position:relative;height:56px;border-bottom:1px solid var(--line)}
+.tl-top{position:absolute;top:0;height:28px;display:flex;align-items:center;padding:0 8px;border-left:1px solid var(--line);border-bottom:1px solid var(--line-soft);font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden}
+.tl-cell{position:absolute;top:28px;height:28px;display:flex;align-items:center;justify-content:center;border-left:1px solid var(--line-soft);font-family:var(--mono);font-size:11px;white-space:nowrap;overflow:hidden}
+.tl-cell.shade{color:#5E6C79}
+.today-tag{position:absolute;top:30px;height:22px;padding:0 6px;border-radius:4px;display:flex;align-items:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff;background:var(--accent);transform:translateX(-50%);white-space:nowrap}
+.tl-body{position:relative;min-height:88px}
+.tl-col{position:absolute;top:0;bottom:0;border-left:1px solid var(--ground)}
+.tl-col.shade{background:var(--shade)}
+.today-line{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;z-index:2;background:var(--accent)}
+.tl-row{position:relative;z-index:1;height:44px;border-bottom:1px solid var(--line-soft)}
+.bar{position:absolute;top:10px;height:24px;padding:0;border:1.5px solid;border-radius:6px;overflow:hidden;cursor:grab;touch-action:none}
+.bar:active{cursor:grabbing}
+.bar span{display:block;height:100%}
+.handle{position:absolute;top:8px;width:14px;height:28px;padding:0;border:0;background:transparent;cursor:ew-resize;touch-action:none;display:flex;align-items:center;justify-content:center}
+.handle span{width:4px;height:14px;border-radius:2px;background:#fff;border:1px solid var(--muted)}
+.diamond{position:absolute;top:12px;width:20px;height:20px;padding:0;border:2px solid #fff;border-radius:3px;transform:rotate(45deg);cursor:grab;touch-action:none}
+.bar-label{position:absolute;top:0;height:44px;display:flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap;pointer-events:none}
+.bar-label small{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.hint{margin:0;font-size:13px;color:var(--muted)}
+.panel{padding:20px;display:flex;flex-direction:column;gap:12px}
+.panel h2{margin:0;font-size:18px;font-weight:600}
+.panel p{margin:0}
+.muted{color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label,.field .lbl{font-size:13px;font-weight:500}
+.input{height:44px;padding:0 12px;border:1px solid var(--field);border-radius:8px;background:#fff}
+textarea.input{height:auto;padding:10px 12px;resize:vertical}
+.code{font-family:var(--mono);font-size:12px;background:#F7F9FA}
+.lower{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.details{flex:2 1 520px;min-width:0}
+.projects{flex:1 1 320px;min-width:0}
+.details-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.span-all{grid-column:1/-1}
+.swatch{width:44px;height:44px;border-radius:10px;border:0}
+.swatch[aria-pressed="true"]{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--ink)}
+.check{display:flex;align-items:center;gap:10px;min-height:44px;padding-top:22px}
+.check input{width:20px;height:20px;accent-color:var(--accent)}
+input[type=range]{height:44px;accent-color:var(--accent)}
+.plist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.plist li{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 12px;border-radius:8px;border:1px solid var(--line-soft)}
+.plist li.current{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,#fff)}
+.plist .info{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+.plist .name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plist .meta{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.icon-btn{width:44px;padding:0;display:flex;align-items:center;justify-content:center;color:var(--danger)}
+.btn-confirm{border-color:var(--danger);background:var(--danger);color:#fff;font-weight:600}
+.error{color:var(--danger);font-weight:500}
+[hidden]{display:none !important}
+@media (max-width:760px){
+  .left{width:250px}
+  .grid-row{grid-template-columns:32px minmax(0,1fr) 48px}
+  .wide{display:none !important}
+}
+@media print{
+  body{background:#fff}
+  header .row-flex,.toolbar .btn-dashed,.seg,.lower,.hint,#export-panel,#import-panel{display:none !important}
+  .scroller{overflow:visible}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title-block">
+      <label for="title">Gantt Builder · Project title</label>
+      <input id="title" type="text" data-focus="title" autocomplete="off">
+    </div>
+    <div class="row-flex">
+      <button class="btn" data-action="new">New project</button>
+      <button class="btn" data-action="save">Save</button>
+      <button class="btn" data-action="open-import">Import</button>
+      <button class="btn btn-primary" data-action="open-export">Export</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="row-flex" style="gap:12px">
+      <div class="seg" role="group" aria-label="Timeline scale" id="scales"></div>
+      <button class="btn btn-dashed" data-action="add">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
+        Add task
+      </button>
+    </div>
+    <div class="summary" id="summary"></div>
+  </div>
+
+  <section class="card chart" aria-label="Gantt chart">
+    <div class="scroller" id="scroller">
+      <div class="chart-inner">
+        <div class="left">
+          <div class="left-title">Tasks</div>
+          <div class="grid-row col-heads">
+            <span style="text-align:center">#</span><span>Name</span>
+            <span class="wide">Start</span><span class="wide">End</span>
+            <span class="wide num">Days</span><span class="num">Done %</span>
+          </div>
+          <div id="grid"></div>
+        </div>
+        <div class="tl" id="tl"></div>
+      </div>
+    </div>
+  </section>
+
+  <p class="hint">Drag a bar to move it, drag its right-hand handle to change its length. With a bar focused, arrow keys move it a day; Shift + arrow keys change its end date.</p>
+
+  <section class="card panel" id="export-panel" aria-label="Export project" hidden>
+    <div class="row-flex" style="justify-content:space-between">
+      <h2>Export project file</h2>
+      <div class="row-flex">
+        <button class="btn btn-primary" data-action="download">Download .json</button>
+        <button class="btn" data-action="copy" id="copy-btn">Copy</button>
+        <button class="btn" data-action="close-panel">Close</button>
+      </div>
+    </div>
+    <p class="muted">Keep this file to back up or share your plan, and bring it back with Import.</p>
+    <p role="status" id="export-note"></p>
+    <div class="field">
+      <label for="export-text">Project data</label>
+      <textarea id="export-text" class="input code" rows="10" readonly></textarea>
+    </div>
+  </section>
+
+  <section class="card panel" id="import-panel" aria-label="Import project" hidden>
+    <div class="row-flex" style="justify-content:space-between">
+      <h2>Import a project</h2>
+      <button class="btn" data-action="close-panel">Close</button>
+    </div>
+    <p class="muted">Choose a .json file exported from this tool, or paste its contents. It opens as a new project, so nothing you already have is overwritten.</p>
+    <div class="field">
+      <label for="import-file">Project file</label>
+      <input id="import-file" type="file" accept=".json,application/json" style="min-height:44px">
+    </div>
+    <div class="field">
+      <label for="import-text">Or paste project data</label>
+      <textarea id="import-text" class="input code" rows="6"></textarea>
+    </div>
+    <p role="alert" class="error" id="import-error"></p>
+    <div><button class="btn btn-primary" data-action="import-paste">Load pasted data</button></div>
+  </section>
+
+  <div class="lower">
+    <section class="card panel details" aria-label="Task details" id="details"></section>
+    <section class="card panel projects" aria-label="Saved projects">
+      <h2>Saved in this browser</h2>
+      <p role="status" class="muted" style="font-size:13px" id="status"></p>
+      <ul class="plist" id="plist"></ul>
+      <div><button class="btn" data-action="save-copy" id="save-copy">Save a copy</button></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------------- constants ---------------- */
+  var KEY = 'gantt-builder:projects', KEY_LAST = 'gantt-builder:last';
+  var PALETTE = [
+    { hex: '#1F4FC9', name: 'Blue' }, { hex: '#C4561A', name: 'Orange' },
+    { hex: '#0E7C74', name: 'Teal' }, { hex: '#6B3FC2', name: 'Violet' },
+    { hex: '#B32D5E', name: 'Rose' }, { hex: '#46525F', name: 'Slate' }
+  ];
+  var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var PPD = { day: 36, week: 18, month: 5 };
+  var SHOW_WEEKENDS = true;
+
+  /* ---------------- dates (whole days since epoch, UTC) ---------------- */
+  function toNum(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
+    return m ? Math.round(Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5) : null;
+  }
+  function toStr(n) { return new Date(n * 864e5).toISOString().slice(0, 10); }
+  function today() { var d = new Date(); return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5); }
+  function dow(n) { return new Date(n * 864e5).getUTCDay(); }
+  function weekStart(n) { return n - ((dow(n) + 6) % 7); }
+  function parts(n) { var d = new Date(n * 864e5); return { y: d.getUTCFullYear(), m: d.getUTCMonth(), d: d.getUTCDate() }; }
+  function nice(n) { var p = parts(n); return p.d + ' ' + MONTHS[p.m] + ' ' + p.y; }
+  function monthStart(n) { var p = parts(n); return Math.round(Date.UTC(p.y, p.m, 1) / 864e5); }
+  function nextMonth(n) { var p = parts(n); return Math.round(Date.UTC(p.y, p.m + 1, 1) / 864e5); }
+
+  /* ---------------- helpers ---------------- */
+  function uid() { return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function $(id) { return document.getElementById(id); }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+  /* ---------------- task model ---------------- */
+  function sample(m) {
+    var ids = [uid() + 'a', uid() + 'b', uid() + 'c', uid() + 'd', uid() + 'e', uid() + 'f'];
+    function t(i, name, s, e, p, c, ms) {
+      return { id: ids[i], name: name, start: toStr(m + s), end: toStr(m + e), progress: p, color: c, milestone: !!ms, dep: i ? ids[i - 1] : '', notes: '' };
+    }
+    return [
+      t(0, 'Kick-off and scope', 0, 1, 100, '#46525F'),
+      t(1, 'Research', 2, 8, 60, '#1F4FC9'),
+      t(2, 'Design', 9, 18, 20, '#6B3FC2'),
+      t(3, 'Build', 19, 36, 0, '#0E7C74'),
+      t(4, 'Testing', 37, 44, 0, '#C4561A'),
+      t(5, 'Launch', 45, 45, 0, '#B32D5E', true)
+    ];
+  }
+  function clean(t, i) {
+    t = t && typeof t === 'object' ? t : {};
+    var s = toNum(t.start); if (s == null) s = today();
+    var e = toNum(t.end); if (e == null || e < s) e = s;
+    return {
+      id: typeof t.id === 'string' && t.id ? t.id.slice(0, 60) : uid() + i,
+      name: String(t.name == null ? '' : t.name).slice(0, 200),
+      start: toStr(s), end: toStr(t.milestone ? s : e),
+      progress: clamp(Math.round(+t.progress || 0), 0, 100),
+      color: /^#[0-9a-fA-F]{6}$/.test(String(t.color)) ? t.color : PALETTE[i % PALETTE.length].hex,
+      milestone: !!t.milestone,
+      dep: typeof t.dep === 'string' ? t.dep.slice(0, 60) : '',
+      notes: String(t.notes || '').slice(0, 4000)
+    };
+  }
+  function normalize(t) {
+    var s = toNum(t.start), e = toNum(t.end);
+    if (s == null) s = today();
+    if (e == null || e < s) e = s;
+    if (t.milestone) e = s;
+    return Object.assign({}, t, { start: toStr(s), end: toStr(e) });
+  }
+  /* Push each task so it starts after the task it depends on. */
+  function schedule(list) {
+    var tasks = list.map(function (t) { return Object.assign({}, t); }), byId = {};
+    tasks.forEach(function (t) { byId[t.id] = t; });
+    for (var pass = 0; pass <= tasks.length; pass++) {
+      var changed = false;
+      tasks.forEach(function (t) {
+        if (!t.dep) return;
+        var d = byId[t.dep];
+        if (!d || d.id === t.id) { t.dep = ''; return; }
+        var earliest = toNum(d.end) + (d.milestone ? 0 : 1), s = toNum(t.start);
+        if (s < earliest) {
+          var delta = earliest - s;
+          t.start = toStr(s + delta); t.end = toStr(toNum(t.end) + delta); changed = true;
+        }
+      });
+      if (!changed) break;
+    }
+    return tasks;
+  }
+
+  /* ---------------- state ---------------- */
+  var state = {
+    id: uid(), title: 'Website relaunch', tasks: schedule(sample(weekStart(today()))),
+    scale: 'week', selectedId: '', storageOk: false, savedAt: 0, pendingDelete: '',
+    panel: '', exportText: '', exportName: ''
+  };
+  var saveTimer = null, drag = null;
+
+  /* ---------------- storage ---------------- */
+  function store() {
+    try { var ls = window.localStorage; ls.setItem('gantt-builder:test', '1'); ls.removeItem('gantt-builder:test'); return ls; }
+    catch (e) { return null; }
+  }
+  function readAll() {
+    var ls = store(); if (!ls) return {};
+    try { var o = JSON.parse(ls.getItem(KEY) || '{}'); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; }
+    catch (e) { return {}; }
+  }
+  function writeAll(all) {
+    var ls = store(); if (!ls) return false;
+    try { ls.setItem(KEY, JSON.stringify(all)); return true; } catch (e) { return false; }
+  }
+  function byRecent(all) { return Object.keys(all).sort(function (a, b) { return (all[b].savedAt || 0) - (all[a].savedAt || 0); }); }
+  function persist() {
+    clearTimeout(saveTimer);
+    var ls = store();
+    if (!ls) { state.storageOk = false; renderProjects(); return; }
+    var all = readAll(), now = Date.now();
+    all[state.id] = { title: state.title, tasks: state.tasks, scale: state.scale, savedAt: now };
+    var ok = writeAll(all);
+    if (ok) { try { ls.setItem(KEY_LAST, state.id); } catch (e) {} state.savedAt = now; }
+    state.storageOk = ok;
+    renderProjects();
+  }
+  function persistSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(persist, 400); }
+  function loadProject(id, all) {
+    all = all || readAll();
+    var p = all[id]; if (!p) return;
+    state.id = id;
+    state.title = String(p.title || 'Untitled project').slice(0, 200);
+    state.tasks = schedule((Array.isArray(p.tasks) ? p.tasks : []).slice(0, 500).map(clean));
+    state.scale = PPD[p.scale] ? p.scale : 'week';
+    state.selectedId = ''; state.pendingDelete = ''; state.panel = '';
+    state.savedAt = p.savedAt || 0; state.storageOk = true;
+    var ls = store(); if (ls) { try { ls.setItem(KEY_LAST, id); } catch (e) {} }
+    render();
+  }
+  function boot() {
+    var ls = store();
+    if (!ls) { state.storageOk = false; render(); return; }
+    var all = readAll(), last = null;
+    try { last = ls.getItem(KEY_LAST); } catch (e) {}
+    var pick = last && all[last] ? last : byRecent(all)[0];
+    if (pick) loadProject(pick, all);
+    else { state.storageOk = true; render(); persist(); }
+  }
+
+  /* ---------------- edits ---------------- */
+  function find(id) { for (var i = 0; i < state.tasks.length; i++) if (state.tasks[i].id === id) return state.tasks[i]; return null; }
+  function setTasks(tasks) { state.tasks = schedule(tasks); render(); persistSoon(); }
+  function update(id, patch) {
+    setTasks(state.tasks.map(function (t) { return t.id === id ? normalize(Object.assign({}, t, patch)) : t; }));
+  }
+  function setStart(t, v) {
+    var s = toNum(v); if (s == null) return;
+    update(t.id, { start: v, end: toStr(s + toNum(t.end) - toNum(t.start)) });
+  }
+  function setEnd(t, v) { if (toNum(v) != null) update(t.id, { end: v, milestone: false }); }
+  function setDays(t, v) {
+    var n = parseInt(v, 10); if (isNaN(n) || n < 0) return;
+    if (n === 0) update(t.id, { milestone: true });
+    else update(t.id, { milestone: false, end: toStr(toNum(t.start) + Math.min(n, 999) - 1) });
+  }
+  function addTask() {
+    var tasks = state.tasks.slice(), sel = find(state.selectedId), ref = sel || tasks[tasks.length - 1];
+    var start = ref ? toNum(ref.end) + 1 : today();
+    var t = { id: uid(), name: 'New task', start: toStr(start), end: toStr(start + 4), progress: 0,
+      color: PALETTE[tasks.length % PALETTE.length].hex, milestone: false, dep: '', notes: '' };
+    tasks.splice(sel ? tasks.indexOf(sel) + 1 : tasks.length, 0, t);
+    state.selectedId = t.id;
+    setTasks(tasks);
+  }
+  function removeTask(id) {
+    state.selectedId = '';
+    setTasks(state.tasks.filter(function (t) { return t.id !== id; })
+      .map(function (t) { return t.dep === id ? Object.assign({}, t, { dep: '' }) : t; }));
+  }
+  function duplicateTask(id) {
+    var tasks = state.tasks.slice(), i = tasks.findIndex(function (t) { return t.id === id; });
+    if (i < 0) return;
+    var copy = Object.assign({}, tasks[i], { id: uid(), name: (tasks[i].name + ' (copy)').slice(0, 200) });
+    tasks.splice(i + 1, 0, copy);
+    state.selectedId = copy.id;
+    setTasks(tasks);
+  }
+  function moveTask(id, dir) {
+    var tasks = state.tasks.slice(), i = tasks.findIndex(function (t) { return t.id === id; }), j = i + dir;
+    if (i < 0 || j < 0 || j >= tasks.length) return;
+    var tmp = tasks[i]; tasks[i] = tasks[j]; tasks[j] = tmp;
+    setTasks(tasks);
+  }
+  function select(id) { if (state.selectedId !== id) { state.selectedId = id; render(); } }
+
+  /* ---------------- projects ---------------- */
+  function newProject() {
+    if (state.storageOk) persist();
+    var t = today();
+    var task = { id: uid(), name: 'First task', start: toStr(t), end: toStr(t + 4), progress: 0, color: '#1F4FC9', milestone: false, dep: '', notes: '' };
+    Object.assign(state, { id: uid(), title: 'Untitled project', tasks: [task], selectedId: task.id, panel: '', pendingDelete: '', savedAt: 0 });
+    render(); persist();
+  }
+  function saveCopy() {
+    persist();
+    state.id = uid(); state.title = (state.title + ' (copy)').slice(0, 200);
+    render(); persist();
+  }
+  function openProject(id) { if (id === state.id) return; persist(); loadProject(id); }
+  function deleteProject(id) {
+    var all = readAll(); delete all[id]; writeAll(all);
+    state.pendingDelete = '';
+    if (id === state.id) {
+      var ids = byRecent(all);
+      if (ids.length) loadProject(ids[0], all); else newProject();
+      return;
+    }
+    renderProjects();
+  }
+
+  /* ---------------- export / import ---------------- */
+  function slug(s) { return (String(s || 'project').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'project').slice(0, 60); }
+  function openExport() {
+    state.exportText = JSON.stringify({ app: 'gantt-builder', version: 1, title: state.title, scale: state.scale,
+      exportedAt: new Date().toISOString(), tasks: state.tasks }, null, 2);
+    state.exportName = slug(state.title) + '.gantt.json';
+    state.panel = 'export';
+    $('export-text').value = state.exportText;
+    $('export-note').textContent = '';
+    $('copy-btn').textContent = 'Copy';
+    renderPanels();
+  }
+  function download() {
+    try {
+      var url = URL.createObjectURL(new Blob([state.exportText], { type: 'application/json' }));
+      var a = document.createElement('a'); a.href = url; a.download = state.exportName;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      $('export-note').textContent = 'Downloaded ' + state.exportName + '.';
+    } catch (e) {
+      $('export-note').textContent = 'Download is blocked here. Use Copy and save the text as a .json file.';
+    }
+  }
+  function copyExport() {
+    var done = function () { $('copy-btn').textContent = 'Copied'; };
+    var fail = function () { $('export-text').select(); $('export-note').textContent = 'Copy was blocked. The text is selected, so press Ctrl+C (or Cmd+C).'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(state.exportText).then(done, fail);
+    else fail();
+  }
+  function importData(text) {
+    var err = $('import-error'), data;
+    try { data = JSON.parse(text); } catch (e) { err.textContent = 'That is not valid project data. Check it is the JSON exported from this tool.'; return; }
+    var list = Array.isArray(data) ? data : (data && Array.isArray(data.tasks) ? data.tasks : null);
+    if (!list) { err.textContent = 'No task list found in that data.'; return; }
+    var tasks = list.slice(0, 500).map(clean), seen = {};
+    tasks.forEach(function (t, i) { if (seen[t.id]) t.id = uid() + i; seen[t.id] = true; });
+    if (state.storageOk) persist();
+    Object.assign(state, {
+      id: uid(),
+      title: data && !Array.isArray(data) && data.title ? String(data.title).slice(0, 200) : 'Imported project',
+      tasks: schedule(tasks),
+      scale: data && PPD[data.scale] ? data.scale : state.scale,
+      selectedId: '', panel: '', savedAt: 0
+    });
+    err.textContent = ''; $('import-text').value = ''; $('import-file').value = '';
+    render(); persist();
+  }
+
+  /* ---------------- timeline geometry ---------------- */
+  function timeline() {
+    var ppd = PPD[state.scale], t0 = today(), lo = t0, hi = t0;
+    state.tasks.forEach(function (t) { lo = Math.min(lo, toNum(t.start)); hi = Math.max(hi, toNum(t.end)); });
+    var min, max;
+    if (state.scale === 'month') { min = monthStart(lo - 10); max = nextMonth(nextMonth(hi)) - 1; }
+    else if (state.scale === 'week') { min = weekStart(lo - 7); max = weekStart(hi + 21) + 6; }
+    else { min = weekStart(lo - 3); max = weekStart(hi + 10) + 6; }
+    var px = function (n) { return (n - min) * ppd; };
+    var cells = [], top = [], n;
+    function cell(a, b, label, shade) { cells.push({ left: px(a), width: (b - a + 1) * ppd, label: label, shade: shade }); }
+    if (state.scale === 'day') {
+      for (n = min; n <= max; n++) cell(n, n, String(parts(n).d), SHOW_WEEKENDS && (dow(n) === 0 || dow(n) === 6));
+    } else if (state.scale === 'week') {
+      for (n = min; n <= max; n += 7) cell(n, Math.min(n + 6, max), String(parts(n).d), false);
+    } else {
+      for (n = min; n <= max; n = nextMonth(n)) cell(n, Math.min(nextMonth(n) - 1, max), MONTHS[parts(n).m], false);
+    }
+    n = min;
+    while (n <= max) {
+      var p = parts(n), end;
+      if (state.scale === 'month') { end = Math.min(Math.round(Date.UTC(p.y + 1, 0, 1) / 864e5) - 1, max); top.push({ label: String(p.y), left: px(n), width: (end - n + 1) * ppd }); }
+      else { end = Math.min(nextMonth(n) - 1, max); top.push({ label: MONTHS[p.m] + ' ' + p.y, left: px(n), width: (end - n + 1) * ppd }); }
+      n = end + 1;
+    }
+    return { min: min, ppd: ppd, width: (max - min + 1) * ppd, cells: cells, top: top,
+      showToday: t0 >= min && t0 <= max, todayLeft: px(t0) + ppd / 2 };
+  }
+  function barGeom(t, tl) {
+    var s = toNum(t.start), e = toNum(t.end), days = t.milestone ? 0 : e - s + 1;
+    var left = (s - tl.min) * tl.ppd, width = Math.max(days, 1) * tl.ppd;
+    return { s: s, e: e, days: days, left: left, width: width,
+      labelLeft: t.milestone ? left + tl.ppd / 2 + 18 : left + width + 12 };
+  }
+
+  /* ---------------- rendering ---------------- */
+  var lastTl = null;
+
+  function render() {
+    // Keep focus, caret and horizontal scroll across re-renders.
+    var ae = document.activeElement, key = ae && ae.getAttribute && ae.getAttribute('data-focus');
+    var selStart = null, selEnd = null;
+    try { selStart = ae.selectionStart; selEnd = ae.selectionEnd; } catch (e) {}
+    var scrollLeft = $('scroller').scrollLeft;
+
+    var titleEl = $('title');
+    if (titleEl.value !== state.title) titleEl.value = state.title;
+    document.title = (state.title || 'Untitled project') + ' · sgantt';
+
+    renderScales(); renderSummary(); renderChart(); renderDetails(); renderProjects(); renderPanels();
+
+    $('scroller').scrollLeft = scrollLeft;
+    if (key) {
+      var el = document.querySelector('[data-focus="' + key + '"]');
+      if (el && el !== document.activeElement) {
+        el.focus({ preventScroll: true });
+        try { if (selStart != null) el.setSelectionRange(selStart, selEnd); } catch (e) {}
+      }
+    }
+  }
+
+  function renderScales() {
+    $('scales').innerHTML = [['day', 'Day'], ['week', 'Week'], ['month', 'Month']].map(function (x) {
+      return '<button type="button" data-action="scale" data-scale="' + x[0] + '" aria-pressed="' + (state.scale === x[0]) + '">' + x[1] + '</button>';
+    }).join('');
+  }
+
+  function renderSummary() {
+    var lo = null, hi = null, done = 0, total = 0;
+    state.tasks.forEach(function (t) {
+      var s = toNum(t.start), e = toNum(t.end);
+      if (lo == null || s < lo) lo = s; if (hi == null || e > hi) hi = e;
+      var d = t.milestone ? 0 : e - s + 1; total += d; done += d * t.progress / 100;
+    });
+    var n = state.tasks.length;
+    $('summary').innerHTML =
+      '<span>' + n + (n === 1 ? ' task' : ' tasks') + '</span>' +
+      '<span>' + (lo == null ? 'No dates yet' : esc(nice(lo) + ' – ' + nice(hi) + ' (' + (hi - lo + 1) + ' days)')) + '</span>' +
+      (total ? '<span>' + Math.round(done / total * 100) + '% complete overall</span>' : '');
+  }
+
+  function renderChart() {
+    var tl = timeline(); lastTl = tl;
+    var index = {}; state.tasks.forEach(function (t, i) { index[t.id] = i; });
+
+    // Left grid
+    var g = state.tasks.map(function (t, i) {
+      var geo = barGeom(t, tl), sel = t.id === state.selectedId, id = esc(t.id);
+      return '<div class="grid-row task-row' + (sel ? ' selected' : '') + '" data-id="' + id + '">' +
+        '<button type="button" class="pick" data-action="select" aria-label="Select task ' + (i + 1) + ': ' + esc(t.name || 'untitled') + '">' +
+          '<span class="dot" style="background:' + t.color + '"></span>' + (i + 1) + '</button>' +
+        '<input class="cell" type="text" data-field="name" data-focus="g-name-' + id + '" value="' + esc(t.name) + '" aria-label="Task name">' +
+        '<input class="cell mono wide" type="date" data-field="start" data-focus="g-start-' + id + '" value="' + t.start + '" aria-label="Start date">' +
+        '<input class="cell mono wide" type="date" data-field="end" data-focus="g-end-' + id + '" value="' + t.end + '" aria-label="End date">' +
+        '<input class="cell mono wide num" type="number" min="0" max="999" data-field="days" data-focus="g-days-' + id + '" value="' + geo.days + '" aria-label="Duration in days">' +
+        '<input class="cell mono num" type="number" min="0" max="100" step="5" data-field="progress" data-focus="g-prog-' + id + '" value="' + t.progress + '" aria-label="Percent complete">' +
+      '</div>';
+    }).join('');
+    $('grid').innerHTML = g || '<div class="empty">No tasks yet. Use Add task to start your plan.</div>';
+
+    // Timeline
+    var html = '<div class="tl-head">';
+    tl.top.forEach(function (c) { html += '<div class="tl-top" style="left:' + c.left + 'px;width:' + c.width + 'px">' + esc(c.label) + '</div>'; });
+    tl.cells.forEach(function (c) { html += '<div class="tl-cell' + (c.shade ? ' shade' : '') + '" style="left:' + c.left + 'px;width:' + c.width + 'px">' + esc(c.label) + '</div>'; });
+    if (tl.showToday) html += '<div class="today-tag" style="left:' + tl.todayLeft + 'px">Today</div>';
+    html += '</div><div class="tl-body">';
+    tl.cells.forEach(function (c) { html += '<div class="tl-col' + (c.shade ? ' shade' : '') + '" aria-hidden="true" style="left:' + c.left + 'px;width:' + c.width + 'px"></div>'; });
+    if (tl.showToday) html += '<div class="today-line" aria-hidden="true" style="left:' + tl.todayLeft + 'px"></div>';
+    state.tasks.forEach(function (t) {
+      var geo = barGeom(t, tl), sel = t.id === state.selectedId, id = esc(t.id), name = esc(t.name || 'Untitled task');
+      var depName = t.dep && index[t.dep] != null ? 'after #' + (index[t.dep] + 1) : '';
+      var meta = t.milestone ? nice(geo.s) : t.progress + '%' + (depName ? ' · ' + depName : '');
+      var aria = name + ', ' + nice(geo.s) + (t.milestone ? '' : ' to ' + nice(geo.e)) + '. Arrow keys move it.';
+      html += '<div class="tl-row' + (sel ? ' selected' : '') + '" data-id="' + id + '">';
+      if (t.milestone) {
+        html += '<button type="button" class="diamond" data-drag="move" data-focus="bar-' + id + '" aria-label="' + aria + '" style="left:' + (geo.left + tl.ppd / 2 - 10) + 'px;background:' + t.color + (sel ? ';box-shadow:0 0 0 2px ' + t.color : '') + '"></button>';
+      } else {
+        html += '<button type="button" class="bar" data-drag="move" data-focus="bar-' + id + '" aria-label="' + aria + '" style="left:' + geo.left + 'px;width:' + geo.width + 'px;border-color:' + t.color + ';background:' + t.color + '2E' + (sel ? ';box-shadow:0 0 0 2px #fff,0 0 0 4px ' + t.color : '') + '">' +
+          '<span style="width:' + t.progress + '%;background:' + t.color + '"></span></button>' +
+          '<button type="button" class="handle" data-drag="resize" data-focus="handle-' + id + '" aria-label="Change end date of ' + name + '. Arrow keys adjust it." style="left:' + (geo.left + geo.width - 7) + 'px"><span></span></button>';
+      }
+      html += '<span class="bar-label" style="left:' + geo.labelLeft + 'px">' + name + '<small>' + esc(meta) + '</small></span></div>';
+    });
+    html += '</div>';
+    var tlEl = $('tl'); tlEl.style.width = tl.width + 'px'; tlEl.innerHTML = html;
+  }
+
+  function renderDetails() {
+    var t = find(state.selectedId), el = $('details');
+    if (!t) {
+      el.innerHTML = '<h2>Task details</h2><p class="muted">Select a task in the list or on the chart to edit its colour, dependency and notes.</p>';
+      return;
+    }
+    var opts = state.tasks.map(function (o, i) {
+      return o.id === t.id ? '' : '<option value="' + esc(o.id) + '"' + (o.id === t.dep ? ' selected' : '') + '>' + (i + 1) + '. ' + esc(o.name || 'Untitled task') + '</option>';
+    }).join('');
+    var sw = PALETTE.map(function (p) {
+      return '<button type="button" class="swatch" data-action="color" data-color="' + p.hex + '" aria-label="' + p.name + '" aria-pressed="' + (p.hex.toLowerCase() === t.color.toLowerCase()) + '" style="background:' + p.hex + '"></button>';
+    }).join('');
+    el.innerHTML =
+      '<h2>Task details</h2>' +
+      '<div class="details-grid" data-id="' + esc(t.id) + '">' +
+        '<div class="field span-all"><label for="d-name">Name</label><input id="d-name" class="input" type="text" data-field="name" data-focus="d-name" value="' + esc(t.name) + '"></div>' +
+        '<div class="field"><label for="d-start">Start</label><input id="d-start" class="input mono" type="date" data-field="start" data-focus="d-start" value="' + t.start + '"></div>' +
+        '<div class="field"><label for="d-end">End</label><input id="d-end" class="input mono" type="date" data-field="end" data-focus="d-end" value="' + t.end + '"></div>' +
+        '<div class="field"><label for="d-progress">Complete: ' + t.progress + '%</label><input id="d-progress" type="range" min="0" max="100" step="5" data-field="progress" data-focus="d-progress" value="' + t.progress + '"></div>' +
+        '<div class="field"><label for="d-dep">Starts after</label><select id="d-dep" class="input" data-field="dep" data-focus="d-dep"><option value="">No dependency</option>' + opts + '</select></div>' +
+        '<div class="check"><input id="d-ms" type="checkbox" data-field="milestone" data-focus="d-ms"' + (t.milestone ? ' checked' : '') + '><label for="d-ms">Milestone (single day)</label></div>' +
+        '<div class="field span-all"><span class="lbl" id="d-colour">Colour</span><div class="row-flex" role="group" aria-labelledby="d-colour">' + sw + '</div></div>' +
+        '<div class="field span-all"><label for="d-notes">Notes</label><textarea id="d-notes" class="input" rows="4" data-field="notes" data-focus="d-notes">' + esc(t.notes) + '</textarea></div>' +
+      '</div>' +
+      '<div class="row-flex" data-id="' + esc(t.id) + '">' +
+        '<button type="button" class="btn" data-action="up">Move up</button>' +
+        '<button type="button" class="btn" data-action="down">Move down</button>' +
+        '<button type="button" class="btn" data-action="duplicate">Duplicate</button>' +
+        '<button type="button" class="btn btn-danger" data-action="delete">Delete task</button>' +
+      '</div>';
+  }
+
+  function renderProjects() {
+    var status = $('status'), list = $('plist');
+    if (!state.storageOk) {
+      status.textContent = 'This browser is not allowing local storage, so changes are not kept. Use Export to save a file of your plan.';
+      list.innerHTML = ''; $('save-copy').hidden = true; return;
+    }
+    $('save-copy').hidden = false;
+    status.textContent = state.savedAt
+      ? 'Saved automatically in this browser at ' + new Date(state.savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '. Export a file to back up or move to another device.'
+      : 'Changes save automatically in this browser.';
+    var all = readAll();
+    if (!all[state.id]) all[state.id] = { title: state.title, tasks: state.tasks, savedAt: 0 };
+    list.innerHTML = byRecent(all).map(function (id) {
+      var p = all[id], cur = id === state.id, title = cur ? state.title : String(p.title || 'Untitled project');
+      var count = cur ? state.tasks.length : (Array.isArray(p.tasks) ? p.tasks.length : 0);
+      var when = p.savedAt ? new Date(p.savedAt).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'not saved yet';
+      var t = esc(title || 'Untitled project'), pending = state.pendingDelete === id;
+      return '<li class="' + (cur ? 'current' : '') + '" data-pid="' + esc(id) + '">' +
+        '<div class="info"><span class="name">' + t + '</span><span class="meta">' + (cur ? 'Open now · ' : '') + count + ' tasks · ' + esc(when) + '</span></div>' +
+        (cur ? '' : '<button type="button" class="btn" data-action="p-open" aria-label="Open ' + t + '">Open</button>') +
+        (pending
+          ? '<button type="button" class="btn btn-confirm" data-action="p-confirm">Delete</button><button type="button" class="btn" data-action="p-cancel">Keep</button>'
+          : '<button type="button" class="btn icon-btn" data-action="p-delete" aria-label="Delete ' + t + '"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5h6.6L12 4"/></svg></button>') +
+      '</li>';
+    }).join('');
+  }
+
+  function renderPanels() {
+    $('export-panel').hidden = state.panel !== 'export';
+    $('import-panel').hidden = state.panel !== 'import';
+  }
+
+  /* ---------------- events ---------------- */
+  function rowId(el) { var r = el.closest('[data-id]'); return r ? r.getAttribute('data-id') : ''; }
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-action]');
+    if (!b) {
+      var bar = e.target.closest('[data-drag="move"]');
+      if (bar) select(rowId(bar));
+      return;
+    }
+    var a = b.getAttribute('data-action'), id = rowId(b), pli = b.closest('[data-pid]'), pid = pli ? pli.getAttribute('data-pid') : '';
+    switch (a) {
+      case 'new': newProject(); break;
+      case 'save': persist(); break;
+      case 'save-copy': saveCopy(); break;
+      case 'add': addTask(); break;
+      case 'scale': state.scale = b.getAttribute('data-scale'); render(); persistSoon(); break;
+      case 'select': select(id); break;
+      case 'color': update(id, { color: b.getAttribute('data-color') }); break;
+      case 'up': moveTask(id, -1); break;
+      case 'down': moveTask(id, 1); break;
+      case 'duplicate': duplicateTask(id); break;
+      case 'delete': removeTask(id); break;
+      case 'p-open': openProject(pid); break;
+      case 'p-delete': state.pendingDelete = pid; renderProjects(); break;
+      case 'p-cancel': state.pendingDelete = ''; renderProjects(); break;
+      case 'p-confirm': deleteProject(pid); break;
+      case 'open-export': openExport(); break;
+      case 'open-import': state.panel = 'import'; $('import-error').textContent = ''; renderPanels(); break;
+      case 'close-panel': state.panel = ''; renderPanels(); break;
+      case 'download': download(); break;
+      case 'copy': copyExport(); break;
+      case 'import-paste': importData($('import-text').value); break;
+    }
+  });
+
+  // Typing in text fields: update live without losing focus.
+  document.addEventListener('input', function (e) {
+    var el = e.target;
+    if (el.id === 'title') { state.title = el.value.slice(0, 200); document.title = state.title + ' · sgantt'; renderProjects(); persistSoon(); return; }
+    var f = el.getAttribute('data-field'), id = rowId(el), t = find(id);
+    if (!t) return;
+    if (f === 'name') update(id, { name: el.value.slice(0, 200) });
+    else if (f === 'notes') update(id, { notes: el.value.slice(0, 4000) });
+  });
+
+  // Committed values (dates, numbers, selects, checkboxes).
+  document.addEventListener('change', function (e) {
+    var el = e.target;
+    if (el.id === 'import-file') {
+      var f = el.files && el.files[0]; if (!f) return;
+      if (f.size > 5e6) { $('import-error').textContent = 'That file is too large to be a project file.'; return; }
+      f.text().then(importData, function () { $('import-error').textContent = 'Could not read that file.'; });
+      return;
+    }
+    var field = el.getAttribute('data-field'), id = rowId(el), t = find(id);
+    if (!t) return;
+    if (field === 'start') setStart(t, el.value);
+    else if (field === 'end') setEnd(t, el.value);
+    else if (field === 'days') setDays(t, el.value);
+    else if (field === 'progress') { var v = parseInt(el.value, 10); if (!isNaN(v)) update(id, { progress: clamp(v, 0, 100) }); }
+    else if (field === 'dep') update(id, { dep: el.value });
+    else if (field === 'milestone') update(id, { milestone: el.checked });
+  });
+
+  document.addEventListener('focusin', function (e) {
+    var row = e.target.closest('.task-row');
+    if (row && e.target.matches('input')) {
+      var id = row.getAttribute('data-id');
+      if (state.selectedId !== id) { state.selectedId = id; renderDetails(); highlightSelection(); }
+    }
+  });
+  function highlightSelection() {
+    document.querySelectorAll('.task-row,.tl-row').forEach(function (r) { r.classList.toggle('selected', r.getAttribute('data-id') === state.selectedId); });
+  }
+
+  // Dragging: move the DOM directly while dragging, commit on release.
+  document.addEventListener('pointerdown', function (e) {
+    var el = e.target.closest('[data-drag]');
+    if (!el || e.button !== 0) return;
+    var id = rowId(el), t = find(id); if (!t) return;
+    var row = el.closest('.tl-row');
+    drag = { id: id, mode: el.getAttribute('data-drag'), x: e.clientX, s: toNum(t.start), e: toNum(t.end), dd: 0, moved: false,
+      el: el, bar: row.querySelector('.bar, .diamond'), handle: row.querySelector('.handle'), label: row.querySelector('.bar-label'),
+      base: { left: parseFloat((row.querySelector('.bar, .diamond')).style.left), width: parseFloat((row.querySelector('.bar') || { style: { width: '0' } }).style.width) || 0 },
+      milestone: t.milestone };
+    try { el.setPointerCapture(e.pointerId); } catch (err) {}
+    e.preventDefault();
+  });
+  document.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    var dd = Math.round((e.clientX - drag.x) / lastTl.ppd);
+    if (dd === drag.dd) return;
+    drag.dd = dd; drag.moved = true;
+    var p = lastTl.ppd;
+    if (drag.mode === 'move') {
+      var l = drag.base.left + dd * p;
+      drag.bar.style.left = l + 'px';
+      if (drag.handle) drag.handle.style.left = (l + drag.base.width - 7) + 'px';
+      drag.label.style.left = (drag.milestone ? l + 28 : l + drag.base.width + 12) + 'px';
+    } else {
+      var w = Math.max(p, drag.base.width + dd * p);
+      drag.bar.style.width = w + 'px';
+      drag.handle.style.left = (drag.base.left + w - 7) + 'px';
+      drag.label.style.left = (drag.base.left + w + 12) + 'px';
+    }
+  });
+  function endDrag(e) {
+    if (!drag) return;
+    var d = drag; drag = null;
+    try { d.el.releasePointerCapture(e.pointerId); } catch (err) {}
+    state.selectedId = d.id;
+    if (d.moved && d.dd !== 0) {
+      if (d.mode === 'move') update(d.id, { start: toStr(d.s + d.dd), end: toStr(d.e + d.dd) });
+      else update(d.id, { end: toStr(Math.max(d.s, d.e + d.dd)) });
+    } else render();
+  }
+  document.addEventListener('pointerup', endDrag);
+  document.addEventListener('pointercancel', endDrag);
+
+  // Keyboard nudging on focused bars and handles.
+  document.addEventListener('keydown', function (e) {
+    var el = e.target.closest && e.target.closest('[data-drag]');
+    if (!el || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+    e.preventDefault();
+    var t = find(rowId(el)); if (!t) return;
+    var delta = e.key === 'ArrowRight' ? 1 : -1, s = toNum(t.start), en = toNum(t.end);
+    state.selectedId = t.id;
+    if ((e.shiftKey || el.getAttribute('data-drag') === 'resize') && !t.milestone) update(t.id, { end: toStr(Math.max(s, en + delta)) });
+    else update(t.id, { start: toStr(s + delta), end: toStr(en + delta) });
+  });
+
+  window.addEventListener('beforeunload', function () { if (saveTimer) persist(); });
+
+  render();
+  boot();
+})();
+</script>
+</body>
+</html>
