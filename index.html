@@ -43,8 +43,8 @@ header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-be
 .chart{overflow:hidden}
 .scroller{overflow-x:auto}
 .chart-inner{display:flex;width:max-content;min-width:100%}
-.left{position:sticky;left:0;z-index:4;flex:none;width:620px;background:#fff;border-right:1px solid var(--line)}
-.grid-row{display:grid;grid-template-columns:40px minmax(150px,1fr) 136px 136px 52px 60px;column-gap:4px;align-items:center;padding-right:8px}
+.left{position:sticky;left:0;z-index:4;flex:none;width:var(--leftw,620px);background:#fff;border-right:1px solid var(--line)}
+.grid-row{display:grid;grid-template-columns:var(--cols,40px minmax(150px,1fr) 136px 136px 52px 60px);column-gap:4px;align-items:center;padding-right:8px}
 .left-title{height:28px;display:flex;align-items:center;padding:0 12px;font-weight:600;border-bottom:1px solid var(--line-soft)}
 .col-heads{height:28px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--muted)}
 .col-heads span{padding:0 6px}
@@ -116,9 +116,17 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
 .tile{background:#fff;border:1px solid var(--field);border-radius:2px;box-shadow:0 1px 2px rgba(22,32,42,.12);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--muted)}
 .warn{color:var(--danger);font-weight:500;font-size:13px}
 [hidden]{display:none !important}
+.hide-start .c-start,.hide-end .c-end,.hide-days .c-days,.hide-progress .c-progress{display:none !important}
+.zoom{display:flex;align-items:center;padding:3px;gap:2px;background:#DDE3E9;border-radius:10px}
+.zoom button{height:38px;min-width:38px;padding:0 10px;border:0;border-radius:8px;background:transparent;font-weight:500;display:flex;align-items:center;justify-content:center}
+.zoom .fit{background:#fff}
+.zoom output{min-width:52px;text-align:center;font-family:var(--mono);font-size:13px}
+.view-panel{padding:12px 20px;display:flex;flex-wrap:wrap;gap:8px 32px;align-items:flex-start}
+.view-panel legend{font-weight:600;margin-bottom:2px}
+.deps{position:absolute;top:0;left:0;z-index:3;pointer-events:none;overflow:visible}
 @media (max-width:760px){
-  .left{width:250px}
-  .grid-row{grid-template-columns:32px minmax(0,1fr) 48px}
+  .left{width:250px !important}
+  .grid-row{grid-template-columns:32px minmax(0,1fr) 48px !important}
   .wide{display:none !important}
 }
 @media print{
@@ -152,19 +160,46 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
         Add task
       </button>
+      <div class="zoom" role="group" aria-label="Horizontal zoom">
+        <button type="button" data-action="zoom-out" aria-label="Zoom out"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 8h10"/></svg></button>
+        <output id="zoom-label" aria-live="polite">100%</output>
+        <button type="button" data-action="zoom-in" aria-label="Zoom in"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></button>
+        <button type="button" class="fit" data-action="zoom-fit">Fit</button>
+        <button type="button" data-action="zoom-reset">100%</button>
+      </div>
+      <button class="btn" type="button" data-action="toggle-view" aria-expanded="false" aria-controls="view-panel" id="view-btn" style="display:flex;align-items:center;gap:8px">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/><circle cx="5" cy="4" r="1.5" fill="#fff"/><circle cx="11" cy="8" r="1.5" fill="#fff"/><circle cx="7" cy="12" r="1.5" fill="#fff"/></svg>
+        Columns and lines
+      </button>
     </div>
     <div class="summary" id="summary"></div>
   </div>
 
-  <section class="card chart" aria-label="Gantt chart">
+  <section class="card view-panel" id="view-panel" aria-label="Columns and lines" hidden>
+    <fieldset>
+      <legend>Show columns</legend>
+      <div class="row-flex" style="gap:0 20px">
+        <div class="opt"><input id="col-start" type="checkbox" data-col="start"><label for="col-start">Start</label></div>
+        <div class="opt"><input id="col-end" type="checkbox" data-col="end"><label for="col-end">End</label></div>
+        <div class="opt"><input id="col-days" type="checkbox" data-col="days"><label for="col-days">Days</label></div>
+        <div class="opt"><input id="col-progress" type="checkbox" data-col="progress"><label for="col-progress">Done %</label></div>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Chart</legend>
+      <div class="opt"><input id="show-deps" type="checkbox" data-view="deps"><label for="show-deps">Dependency lines</label></div>
+    </fieldset>
+  </section>
+
+  <section class="card chart" aria-label="Gantt chart" id="chart">
     <div class="scroller" id="scroller">
       <div class="chart-inner">
         <div class="left">
           <div class="left-title">Tasks</div>
           <div class="grid-row col-heads">
             <span style="text-align:center">#</span><span>Name</span>
-            <span class="wide">Start</span><span class="wide">End</span>
-            <span class="wide num">Days</span><span class="num">Done %</span>
+            <span class="wide c-start">Start</span><span class="wide c-end">End</span>
+            <span class="wide num c-days">Days</span><span class="num c-progress">Done %</span>
           </div>
           <div id="grid"></div>
         </div>
@@ -255,6 +290,7 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
             <div class="opt"><input id="pdf-repeat" type="checkbox" data-pdf="repeatNames"><label for="pdf-repeat">Task list on every page</label></div>
             <div class="opt"><input id="pdf-today" type="checkbox" data-pdf="showToday"><label for="pdf-today">Today line</label></div>
             <div class="opt"><input id="pdf-weekends" type="checkbox" data-pdf="shadeWeekends"><label for="pdf-weekends">Weekend shading</label></div>
+            <div class="opt"><input id="pdf-deps" type="checkbox" data-pdf="showDeps"><label for="pdf-deps">Dependency lines</label></div>
           </div>
         </fieldset>
       </div>
@@ -375,7 +411,8 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
   var state = {
     id: uid(), title: 'Website relaunch', tasks: schedule(sample(weekStart(today()))),
     scale: 'week', selectedId: '', storageOk: false, savedAt: 0, pendingDelete: '',
-    panel: '', exportText: '', exportName: '', pdf: null
+    panel: '', exportText: '', exportName: '', pdf: null,
+    zoom: 1, hidden: { start: false, end: false, days: false, progress: false }, showDeps: true, viewOpen: false
   };
   var saveTimer = null, drag = null;
 
@@ -392,7 +429,7 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
     function tint(hex, k) { var c = rgb(hex); return c.map(function (v) { return Math.round(v + (255 - v) * k); }); }
   
     var o = Object.assign({ paper: 'a4', orientation: 'landscape', across: 1, down: 1, margin: 'normal',
-      showDates: true, showProgress: true, repeatNames: true, showToday: true, shadeWeekends: true, accent: '#1F4FC9' }, opts || {});
+      showDates: true, showProgress: true, repeatNames: true, showToday: true, shadeWeekends: true, showDeps: true, accent: '#1F4FC9' }, opts || {});
     var doc = new JsPDF({ orientation: o.orientation, unit: 'pt', format: o.paper, compress: true });
     var PW = doc.internal.pageSize.getWidth(), PH = doc.internal.pageSize.getHeight();
     var M = o.margin === 'narrow' ? 20 : 36;
@@ -401,7 +438,7 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
   
     var tasks = (data.tasks || []).map(function (t) {
       var s = toNum(t.start), e = toNum(t.end); if (s == null) s = toNum(data.today) || 0; if (e == null || e < s) e = s;
-      return { name: String(t.name || 'Untitled task'), s: s, e: t.milestone ? s : e, progress: clamp(+t.progress || 0, 0, 100), color: t.color, milestone: !!t.milestone };
+      return { id: t.id, dep: t.dep || '', name: String(t.name || 'Untitled task'), s: s, e: t.milestone ? s : e, progress: clamp(+t.progress || 0, 0, 100), color: t.color, milestone: !!t.milestone };
     });
     var n = tasks.length;
     var today = toNum(data.today);
@@ -571,6 +608,27 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
           if (!showLeft) { doc.setFontSize(fs); ink(INK); doc.text(t.name, bx + bw + 4, y + rowH / 2 + fs * 0.35); }
         });
   
+        // Dependency lines (only between tasks that sit on the same page)
+        if (o.showDeps) {
+          var pos = {};
+          slice.forEach(function (t, i) {
+            var cy = by + i * rowH + rowH / 2;
+            if (t.milestone) { var mx = X(t.s) + dw / 2, hs = Math.max(3, rowH * 0.56 * 0.62); pos[t.id] = { l: mx - hs, r: mx + hs, y: cy }; }
+            else pos[t.id] = { l: X(t.s), r: X(t.s) + (t.e - t.s + 1) * dw, y: cy };
+          });
+          stroke([107, 119, 133]); fill([107, 119, 133]); doc.setLineWidth(0.7);
+          slice.forEach(function (t) {
+            var a = t.dep && pos[t.dep], b = pos[t.id];
+            if (!a || !b) return;
+            var x1 = a.r, y1 = a.y, x2 = b.l, y2 = b.y, ah = Math.max(2, Math.min(3.5, rowH * 0.16)), gap = Math.max(3, rowH * 0.3);
+            var pts;
+            if (x2 - x1 >= gap * 2) { var xm = x1 + gap; pts = [[x1, y1], [xm, y1], [xm, y2], [x2 - ah * 1.6, y2]]; }
+            else { var yb = y2 > y1 ? y2 - rowH / 2 : y2 + rowH / 2, xa = x1 + gap, xb = x2 - gap; pts = [[x1, y1], [xa, y1], [xa, yb], [xb, yb], [xb, y2], [x2 - ah * 1.6, y2]]; }
+            for (var q = 1; q < pts.length; q++) doc.line(pts[q - 1][0], pts[q - 1][1], pts[q][0], pts[q][1]);
+            doc.triangle(x2 - ah * 1.6, y2 - ah, x2, y2, x2 - ah * 1.6, y2 + ah, 'F');
+          });
+        }
+  
         // Today line
         if (o.showToday && today != null && today >= min && today <= max) {
           var tx = X(today) + dw / 2, ac = rgb(o.accent);
@@ -596,7 +654,6 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
     }
     return { doc: doc, pages: pageCount, rowsPerPage: rowsPerPage, across: across, down: down, rowH: rowH, fontSize: fs, unit: unit };
   }
-  
   function cleanPdf(p) {
     p = p && typeof p === 'object' ? p : {};
     function pick(v, list, d) { return list.indexOf(v) >= 0 ? v : d; }
@@ -609,7 +666,8 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
       layout: pick(p.layout, ['fit', 'spread'], 'fit'),
       across: int(p.across), down: int(p.down),
       showDates: bool(p.showDates, true), showProgress: bool(p.showProgress, true),
-      repeatNames: bool(p.repeatNames, true), showToday: bool(p.showToday, true), shadeWeekends: bool(p.shadeWeekends, true)
+      repeatNames: bool(p.repeatNames, true), showToday: bool(p.showToday, true), shadeWeekends: bool(p.shadeWeekends, true),
+      showDeps: bool(p.showDeps, true)
     };
   }
   state.pdf = cleanPdf(null);
@@ -626,7 +684,7 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
     if (document.activeElement !== $('pdf-across')) $('pdf-across').value = p.across;
     if (document.activeElement !== $('pdf-down')) $('pdf-down').value = p.down;
     $('pdf-dates').checked = p.showDates; $('pdf-progress').checked = p.showProgress;
-    $('pdf-repeat').checked = p.repeatNames; $('pdf-today').checked = p.showToday; $('pdf-weekends').checked = p.shadeWeekends;
+    $('pdf-repeat').checked = p.repeatNames; $('pdf-today').checked = p.showToday; $('pdf-weekends').checked = p.shadeWeekends; $('pdf-deps').checked = p.showDeps;
     var across = spread ? p.across : 1, want = spread ? p.down : 1;
     var n = Math.max(state.tasks.length, 1), rpp = Math.ceil(n / want), down = Math.ceil(n / rpp), pages = across * down;
     var dims = { a4: [595.28, 841.89], a3: [841.89, 1190.55], letter: [612, 792], legal: [612, 1008], tabloid: [792, 1224] }[p.paper];
@@ -673,7 +731,7 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
     var ls = store();
     if (!ls) { state.storageOk = false; renderProjects(); return; }
     var all = readAll(), now = Date.now();
-    all[state.id] = { title: state.title, tasks: state.tasks, scale: state.scale, pdf: state.pdf, savedAt: now };
+    all[state.id] = { title: state.title, tasks: state.tasks, scale: state.scale, pdf: state.pdf, zoom: state.zoom, hidden: state.hidden, showDeps: state.showDeps, savedAt: now };
     var ok = writeAll(all);
     if (ok) { try { ls.setItem(KEY_LAST, state.id); } catch (e) {} state.savedAt = now; }
     state.storageOk = ok;
@@ -688,6 +746,9 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
     state.tasks = schedule((Array.isArray(p.tasks) ? p.tasks : []).slice(0, 500).map(clean));
     state.scale = PPD[p.scale] ? p.scale : 'week';
     state.pdf = cleanPdf(p.pdf);
+    state.zoom = cleanZoom(p.zoom);
+    state.hidden = cleanHidden(p.hidden);
+    state.showDeps = p.showDeps !== false;
     state.selectedId = ''; state.pendingDelete = ''; state.panel = '';
     state.savedAt = p.savedAt || 0; state.storageOk = true;
     var ls = store(); if (ls) { try { ls.setItem(KEY_LAST, id); } catch (e) {} }
@@ -822,9 +883,66 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
     render(); persist();
   }
 
+  /* ---------------- zoom and columns ---------------- */
+  var ZOOM_STEPS = [0.1, 0.15, 0.25, 0.33, 0.5, 0.67, 0.75, 1, 1.25, 1.5, 2, 3, 4, 6];
+  function cleanZoom(z) { z = +z; return isFinite(z) && z > 0 ? clamp(z, 0.1, 6) : 1; }
+  function cleanHidden(h) { h = h && typeof h === 'object' ? h : {}; return { start: !!h.start, end: !!h.end, days: !!h.days, progress: !!h.progress }; }
+  function ppd() { return PPD[state.scale] * state.zoom; }
+  function setZoom(z) { state.zoom = cleanZoom(Math.round(z * 1000) / 1000); render(); persistSoon(); }
+  function stepZoom(dir) {
+    var z = state.zoom, next = z, i;
+    if (dir > 0) { for (i = 0; i < ZOOM_STEPS.length; i++) if (ZOOM_STEPS[i] > z + 0.001) { next = ZOOM_STEPS[i]; break; } }
+    else { for (i = ZOOM_STEPS.length - 1; i >= 0; i--) if (ZOOM_STEPS[i] < z - 0.001) { next = ZOOM_STEPS[i]; break; } }
+    // keep the centre of the visible timeline in place
+    var sc = $('scroller'), left = document.querySelector('.left').offsetWidth;
+    var centreDay = (sc.scrollLeft + (sc.clientWidth - left) / 2) / ppd();
+    setZoom(next);
+    sc.scrollLeft = Math.max(0, centreDay * ppd() - (sc.clientWidth - left) / 2);
+  }
+  function fitZoom() {
+    var sc = $('scroller'), left = document.querySelector('.left').offsetWidth;
+    var z0 = state.zoom; state.zoom = 1; var w1 = timeline().width; state.zoom = z0;
+    var avail = sc.clientWidth - left - 2;
+    if (w1 > 0 && avail > 80) { setZoom(avail / w1); sc.scrollLeft = 0; }
+  }
+  function applyColumns() {
+    var h = state.hidden, cols = ['40px', 'minmax(150px,1fr)'], w = 40 + 240 + 8, n = 2, chart = $('chart');
+    if (!h.start) { cols.push('136px'); w += 136; n++; }
+    if (!h.end) { cols.push('136px'); w += 136; n++; }
+    if (!h.days) { cols.push('52px'); w += 52; n++; }
+    if (!h.progress) { cols.push('60px'); w += 60; n++; }
+    chart.style.setProperty('--cols', cols.join(' '));
+    chart.style.setProperty('--leftw', (w + (n - 1) * 4) + 'px');
+    ['start', 'end', 'days', 'progress'].forEach(function (k) { chart.classList.toggle('hide-' + k, h[k]); $('col-' + k).checked = !h[k]; });
+    $('show-deps').checked = state.showDeps;
+    $('view-panel').hidden = !state.viewOpen;
+    $('view-btn').setAttribute('aria-expanded', String(state.viewOpen));
+    $('zoom-label').textContent = Math.round(state.zoom * 100) + '%';
+  }
+  function depPaths(tl) {
+    var ROW = 44, pos = {}, out = '';
+    state.tasks.forEach(function (t, i) {
+      var g = barGeom(t, tl), y = i * ROW + ROW / 2;
+      if (t.milestone) { var cx = g.left + tl.ppd / 2; pos[t.id] = { l: cx - 14, r: cx + 14, y: y }; }
+      else pos[t.id] = { l: g.left, r: g.left + g.width, y: y };
+    });
+    state.tasks.forEach(function (t) {
+      var a = t.dep && pos[t.dep], b = pos[t.id];
+      if (!a || !b) return;
+      var hi = state.selectedId && (state.selectedId === t.id || state.selectedId === t.dep);
+      var x1 = a.r, y1 = a.y, x2 = b.l, y2 = b.y, tip = x2 - 7, d;
+      if (x2 - x1 >= 20) { var xm = x1 + 8; d = 'M' + x1 + ' ' + y1 + 'H' + xm + 'V' + y2 + 'H' + tip; }
+      else { var yb = y2 > y1 ? y2 - ROW / 2 : y2 + ROW / 2, xa = x1 + 8, xb = x2 - 14; d = 'M' + x1 + ' ' + y1 + 'H' + xa + 'V' + yb + 'H' + xb + 'V' + y2 + 'H' + tip; }
+      var col = hi ? 'var(--accent)' : '#6B7785';
+      out += '<path d="' + d + '" fill="none" stroke="' + col + '" stroke-width="1.5"/>' +
+        '<path d="M' + tip + ' ' + (y2 - 4.5) + 'L' + x2 + ' ' + y2 + 'L' + tip + ' ' + (y2 + 4.5) + 'Z" fill="' + col + '"/>';
+    });
+    return out;
+  }
+
   /* ---------------- timeline geometry ---------------- */
   function timeline() {
-    var ppd = PPD[state.scale], t0 = today(), lo = t0, hi = t0;
+    var ppd = PPD[state.scale] * state.zoom, t0 = today(), lo = t0, hi = t0;
     state.tasks.forEach(function (t) { lo = Math.min(lo, toNum(t.start)); hi = Math.max(hi, toNum(t.end)); });
     var min, max;
     if (state.scale === 'month') { min = monthStart(lo - 10); max = nextMonth(nextMonth(hi)) - 1; }
@@ -832,7 +950,7 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
     else { min = weekStart(lo - 3); max = weekStart(hi + 10) + 6; }
     var px = function (n) { return (n - min) * ppd; };
     var cells = [], top = [], n;
-    function cell(a, b, label, shade) { cells.push({ left: px(a), width: (b - a + 1) * ppd, label: label, shade: shade }); }
+    function cell(a, b, label, shade) { var w = (b - a + 1) * ppd; cells.push({ left: px(a), width: w, label: w >= 18 ? label : '', shade: shade }); }
     if (state.scale === 'day') {
       for (n = min; n <= max; n++) cell(n, n, String(parts(n).d), SHOW_WEEKENDS && (dow(n) === 0 || dow(n) === 6));
     } else if (state.scale === 'week') {
@@ -871,7 +989,7 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
     if (titleEl.value !== state.title) titleEl.value = state.title;
     document.title = (state.title || 'Untitled project') + ' · sgantt';
 
-    renderScales(); renderSummary(); renderChart(); renderDetails(); renderProjects(); renderPanels();
+    applyColumns(); renderScales(); renderSummary(); renderChart(); renderDetails(); renderProjects(); renderPanels();
 
     $('scroller').scrollLeft = scrollLeft;
     if (key) {
@@ -914,10 +1032,10 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
         '<button type="button" class="pick" data-action="select" aria-label="Select task ' + (i + 1) + ': ' + esc(t.name || 'untitled') + '">' +
           '<span class="dot" style="background:' + t.color + '"></span>' + (i + 1) + '</button>' +
         '<input class="cell" type="text" data-field="name" data-focus="g-name-' + id + '" value="' + esc(t.name) + '" aria-label="Task name">' +
-        '<input class="cell mono wide" type="date" data-field="start" data-focus="g-start-' + id + '" value="' + t.start + '" aria-label="Start date">' +
-        '<input class="cell mono wide" type="date" data-field="end" data-focus="g-end-' + id + '" value="' + t.end + '" aria-label="End date">' +
-        '<input class="cell mono wide num" type="number" min="0" max="999" data-field="days" data-focus="g-days-' + id + '" value="' + geo.days + '" aria-label="Duration in days">' +
-        '<input class="cell mono num" type="number" min="0" max="100" step="5" data-field="progress" data-focus="g-prog-' + id + '" value="' + t.progress + '" aria-label="Percent complete">' +
+        '<input class="cell mono wide c-start" type="date" data-field="start" data-focus="g-start-' + id + '" value="' + t.start + '" aria-label="Start date">' +
+        '<input class="cell mono wide c-end" type="date" data-field="end" data-focus="g-end-' + id + '" value="' + t.end + '" aria-label="End date">' +
+        '<input class="cell mono wide num c-days" type="number" min="0" max="999" data-field="days" data-focus="g-days-' + id + '" value="' + geo.days + '" aria-label="Duration in days">' +
+        '<input class="cell mono num c-progress" type="number" min="0" max="100" step="5" data-field="progress" data-focus="g-prog-' + id + '" value="' + t.progress + '" aria-label="Percent complete">' +
       '</div>';
     }).join('');
     $('grid').innerHTML = g || '<div class="empty">No tasks yet. Use Add task to start your plan.</div>';
@@ -930,6 +1048,7 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
     html += '</div><div class="tl-body">';
     tl.cells.forEach(function (c) { html += '<div class="tl-col' + (c.shade ? ' shade' : '') + '" aria-hidden="true" style="left:' + c.left + 'px;width:' + c.width + 'px"></div>'; });
     if (tl.showToday) html += '<div class="today-line" aria-hidden="true" style="left:' + tl.todayLeft + 'px"></div>';
+    if (state.showDeps) html += '<svg class="deps" aria-hidden="true" width="' + tl.width + '" height="' + (state.tasks.length * 44) + '">' + depPaths(tl) + '</svg>';
     state.tasks.forEach(function (t) {
       var geo = barGeom(t, tl), sel = t.id === state.selectedId, id = esc(t.id), name = esc(t.name || 'Untitled task');
       var depName = t.dep && index[t.dep] != null ? 'after #' + (index[t.dep] + 1) : '';
@@ -1050,6 +1169,11 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
       case 'import-paste': importData($('import-text').value); break;
       case 'open-pdf': state.panel = 'pdf'; $('pdf-note').textContent = ''; renderPdf(); renderPanels(); break;
       case 'save-pdf': savePdf(); break;
+      case 'zoom-in': stepZoom(1); break;
+      case 'zoom-out': stepZoom(-1); break;
+      case 'zoom-fit': fitZoom(); break;
+      case 'zoom-reset': setZoom(1); break;
+      case 'toggle-view': state.viewOpen = !state.viewOpen; applyColumns(); break;
     }
   });
 
@@ -1072,6 +1196,9 @@ legend{font-size:13px;font-weight:500;padding:0;margin-bottom:8px}
       f.text().then(importData, function () { $('import-error').textContent = 'Could not read that file.'; });
       return;
     }
+    var ck = el.getAttribute('data-col');
+    if (ck) { state.hidden[ck] = !el.checked; applyColumns(); persistSoon(); return; }
+    if (el.getAttribute('data-view') === 'deps') { state.showDeps = el.checked; renderChart(); persistSoon(); return; }
     var pk = el.getAttribute('data-pdf');
     if (pk) {
       var patch = {};

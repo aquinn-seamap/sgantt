@@ -10,6 +10,9 @@ Open `index.html` in any modern browser, or turn on GitHub Pages for this reposi
 
 - Task list with editable name, start, end, duration and % complete
 - Timeline with Day, Week and Month scales, weekend shading and a Today marker
+- Horizontal zoom (10% to 600%) with zoom in/out, Fit (whole project in view) and reset to 100%
+- Show or hide the Start, End, Days and Done % columns
+- Dependency lines drawn from each task to the tasks that start after it (highlighted for the selected task)
 - Drag bars to move tasks; drag the right-hand handle to change length
 - Keyboard: with a bar focused, arrow keys move it a day, Shift + arrow keys change its end date
 - Milestones, colours, notes, and "starts after" dependencies that push later tasks forward
@@ -17,8 +20,8 @@ Open `index.html` in any modern browser, or turn on GitHub Pages for this reposi
 - Export to and import from a `.gantt.json` file for backups and sharing
 - **Save PDF**: A4, A3, US Letter, US Legal or Tabloid, landscape or portrait, normal or narrow margins.
   Fit the whole chart on one page, or spread it across pages (e.g. 2 wide × 1 tall) for long projects.
-  Optionally repeat the task list on every page, and show or hide date columns, % complete, the today line and weekend shading.
-  PDF settings are saved with each project.
+  Optionally repeat the task list on every page, and show or hide date columns, % complete, the today line, weekend shading and dependency lines.
+  PDF settings, zoom level and column choices are saved with each project.
 
 ## Saving and data
 
